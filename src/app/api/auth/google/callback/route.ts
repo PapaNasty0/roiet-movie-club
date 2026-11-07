@@ -6,11 +6,7 @@ import {
   upsertGoogleUser,
 } from "@/lib/auth";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
-
-function oauthOrigin(request: Request, stored?: string | null) {
-  if (stored?.startsWith("http")) return stored.replace(/\/$/, "");
-  return new URL(request.url).origin;
-}
+import { publicOrigin } from "@/lib/request-origin";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -24,7 +20,7 @@ export async function GET(request: Request) {
   jar.delete("rmc_oauth_origin");
   jar.delete("rmc_oauth_link");
 
-  const origin = oauthOrigin(request, storedOrigin);
+  const origin = publicOrigin(request, storedOrigin);
 
   if (!code || !state || !expected || state !== expected) {
     return NextResponse.redirect(`${origin}/account?google=error`);

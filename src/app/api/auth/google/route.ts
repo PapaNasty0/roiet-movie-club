@@ -6,6 +6,7 @@ import {
   upsertGoogleUser,
 } from "@/lib/auth";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
+import { publicOrigin } from "@/lib/request-origin";
 
 function googleConfigured() {
   return Boolean(
@@ -14,14 +15,9 @@ function googleConfigured() {
   );
 }
 
-/** Use the request host so both hosted.app and movieclub101.com work. */
-function oauthOrigin(request: Request) {
-  return new URL(request.url).origin;
-}
-
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const origin = oauthOrigin(request);
+  const origin = publicOrigin(request);
   const link = url.searchParams.get("link") === "1";
 
   if (link) {
