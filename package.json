@@ -2,6 +2,9 @@
   "name": "roiet-movie-club",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22"
+  },
   "scripts": {
     "dev": "next dev --turbopack --hostname 127.0.0.1 --port 3000",
     "build": "next build && node scripts/migrate.mjs",

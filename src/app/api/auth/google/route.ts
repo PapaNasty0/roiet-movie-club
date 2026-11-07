@@ -20,7 +20,10 @@ export async function GET(request: Request) {
   const origin = appOrigin(request);
 
   if (!googleConfigured()) {
-    // Local / unpublished fallback: demo Google sign-in
+    // Local-only demo Google — never available in production.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.redirect(`${origin}/account?google=missing`);
+    }
     const mode = url.searchParams.get("mode") || "demo";
     if (mode !== "demo") {
       return NextResponse.redirect(`${origin}/account?google=missing`);

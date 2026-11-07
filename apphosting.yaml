@@ -1,0 +1,50 @@
+# Firebase App Hosting — RoiEt English Movie Club
+# Project: movieclub101 | Domain: movieclub101.com
+# https://firebase.google.com/docs/app-hosting/configure
+#
+# Next.js SSR + API routes require App Hosting (not static Hosting export).
+# Create referenced secrets before the first rollout:
+#   npx firebase-tools@latest apphosting:secrets:set SESSION_SECRET
+#   npx firebase-tools@latest apphosting:secrets:set DATABASE_URL
+#   npx firebase-tools@latest apphosting:secrets:set ADMIN_EMAIL
+# Optional secrets (add env entries below after creating them):
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY, EMAIL_FROM,
+#   DATABASE_URL_UNPOOLED
+
+runConfig:
+  runtime: nodejs22
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
+
+env:
+  - variable: APP_ORIGIN
+    value: https://movieclub101.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NODE_ENV
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: SESSION_SECRET
+    secret: SESSION_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: ADMIN_EMAIL
+    secret: ADMIN_EMAIL
+    availability:
+      - BUILD
+      - RUNTIME

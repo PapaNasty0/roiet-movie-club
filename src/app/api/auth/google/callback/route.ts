@@ -58,9 +58,13 @@ export async function GET(request: Request) {
     id?: string;
     email?: string;
     name?: string;
+    verified_email?: boolean;
   };
   if (!profile.email || !profile.id) {
     return NextResponse.redirect(`${origin}/account?google=error`);
+  }
+  if (profile.verified_email === false) {
+    return NextResponse.redirect(`${origin}/account?google=unverified`);
   }
 
   const user = await upsertGoogleUser({

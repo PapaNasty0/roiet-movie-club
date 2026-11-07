@@ -41,24 +41,47 @@ No passwords are shipped in source. Become admin by registering or using Google 
 | Name | Purpose |
 | --- | --- |
 | `SESSION_SECRET` | JWT cookie signing (**required in production**) |
-| `GOOGLE_CLIENT_ID` | Google OAuth |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth |
+| `DATABASE_URL` | Postgres connection (required for durable production data) |
 | `ADMIN_EMAIL` | Email treated as admin on signup |
+| `GOOGLE_CLIENT_ID` | Google OAuth (optional until Google login is enabled) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth |
 | `RESEND_API_KEY` | Optional — verification + new-movie email sends |
 | `EMAIL_FROM` | Optional — From address for Resend |
-| `APP_ORIGIN` | Optional — canonical origin for OAuth / verify links |
-| `DATABASE_URL` | Postgres connection (Firebase / host) |
+| `APP_ORIGIN` | Canonical origin — set to `https://movieclub101.com` in production (`apphosting.yaml`) |
+| `DATABASE_URL_UNPOOLED` | Optional — non-pooled URL for migrations (Neon-style) |
 
-Google OAuth redirect URI: `https://<your-app-host>/api/auth/google/callback`
+Google OAuth redirect URI: `https://movieclub101.com/api/auth/google/callback`  
+(Also add the temporary `*.hosted.app` callback while DNS is pending.)
+
+## Firebase App Hosting (production)
+
+SSR + API routes → **App Hosting** (not static export). Firebase project **`movieclub101`**, custom domain **`movieclub101.com`**.
+
+Repo files: `.firebaserc`, `firebase.json` (backend id `movieclub`), `apphosting.yaml`.
+
+Full DNS / console / secrets handoff: Project store `docs/firebase-hosting.md`.
+
+```bash
+npx firebase-tools@latest login --no-localhost
+npx firebase-tools@latest use movieclub101
+npx firebase-tools@latest apphosting:secrets:set SESSION_SECRET
+npx firebase-tools@latest apphosting:secrets:set DATABASE_URL
+npx firebase-tools@latest apphosting:secrets:set ADMIN_EMAIL
+# then optional Google / Resend secrets…
+npx firebase-tools@latest deploy --only apphosting
+```
+
+After the first rollout: App Hosting → **movieclub** → Domains → add `movieclub101.com` and paste the **exact** A / TXT / ACME CNAME rows Firebase shows (do not invent IPs).
+
+Cursor publish-app remains OK for previews; Firebase is production for the custom domain.
 
 ## Scripts
 
 - `npm run dev` — local Next.js
 - `npm run build` — production build + migrate when `DATABASE_URL` is set
 - `npm start` — run production server
+- `npm run migrate` — apply SQL migrations only
 
 ## Stack
 
-Next.js (App Router), Postgres via `pg` / PGlite fallback, cookie sessions (`jose`), Tailwind CSS.
-
-Production hosting target: Firebase project `movieclub101` (custom domain `movieclub101.com`).
+Next.js (App Router), Postgres via `pg` / PGlite fallback, cookie sessions (`jose`), Tailwind CSS, Firebase App Hosting for production.
