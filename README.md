@@ -5,7 +5,7 @@ Base site for Brian Leigh’s English-language movie meetups at Robinson Roi Et 
 ## Features (v1)
 
 - Email + password auth (email confirmation when Resend is configured; `ADMIN_EMAIL` password bootstrap only while Resend is unset), plus Google OAuth when secrets are set
-- Account settings: change display name (shown on forum + RSVP lists)
+- Account settings: change display name (shown on forum + RSVP lists); link Google and/or add a password on the same email (one account per person)
 - Upcoming movies (admin-managed): trailer, synopsis, genre, times, length, rating, reviews summary
 - Logged-in RSVP: might go / will probably go / booked tickets + adult & child counts, with aggregates
 - Per-movie discussion forum

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { upsertGoogleUser } from "@/lib/auth";
+import {
+  linkGoogleToUser,
+  requireUser,
+  upsertGoogleUser,
+} from "@/lib/auth";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
 
 function oauthOrigin(request: Request, stored?: string | null) {
@@ -15,8 +19,10 @@ export async function GET(request: Request) {
   const jar = await cookies();
   const expected = jar.get("rmc_oauth_state")?.value;
   const storedOrigin = jar.get("rmc_oauth_origin")?.value;
+  const linking = jar.get("rmc_oauth_link")?.value === "1";
   jar.delete("rmc_oauth_state");
   jar.delete("rmc_oauth_origin");
+  jar.delete("rmc_oauth_link");
 
   const origin = oauthOrigin(request, storedOrigin);
 
@@ -73,6 +79,31 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/account?google=unverified`);
   }
 
+  if (linking) {
+    const sessionUser = await requireUser();
+    if (!sessionUser) {
+      return NextResponse.redirect(`${origin}/account?google=signin`);
+    }
+    const linked = await linkGoogleToUser({
+      userId: sessionUser.id,
+      email: profile.email,
+      googleId: profile.id,
+      name: profile.name,
+    });
+    if (!linked.ok) {
+      const q =
+        linked.reason === "mismatch"
+          ? "link=mismatch"
+          : linked.reason === "conflict"
+            ? "link=conflict"
+            : "google=error";
+      return NextResponse.redirect(`${origin}/account?${q}`);
+    }
+    await setSessionCookie(await createSessionToken(linked.user));
+    return NextResponse.redirect(`${origin}/account?link=ok`);
+  }
+
+  // Normal sign-in: same email → same account (links Google automatically).
   const user = await upsertGoogleUser({
     email: profile.email,
     name: profile.name || profile.email.split("@")[0],

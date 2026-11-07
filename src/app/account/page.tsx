@@ -9,17 +9,26 @@ export const dynamic = "force-dynamic";
 function bannerFromParams(sp: {
   google?: string;
   verify?: string;
+  link?: string;
 }): string | null {
   if (sp.verify === "ok") return "Email confirmed — you are signed in.";
   if (sp.verify === "invalid")
     return "That confirmation link is invalid or expired. Try registering again.";
   if (sp.verify === "missing") return "Missing confirmation token.";
+  if (sp.link === "ok")
+    return "Google connected. You can sign in with Google or email/password.";
+  if (sp.link === "mismatch")
+    return "Google email must match this account’s email. Pick the matching Google account.";
+  if (sp.link === "conflict")
+    return "That Google account is already linked to a different member.";
   if (sp.google === "missing")
     return "Google sign-in is not set up yet. Use email and password for now.";
   if (sp.google === "error")
     return "Google sign-in failed. Please try again or use email.";
   if (sp.google === "unverified")
     return "Your Google account email is not verified.";
+  if (sp.google === "signin")
+    return "Sign in first, then connect Google from Account.";
   if (sp.google === "demo") return "Signed in with the local Google demo.";
   return null;
 }
@@ -27,7 +36,7 @@ function bannerFromParams(sp: {
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ google?: string; verify?: string }>;
+  searchParams: Promise<{ google?: string; verify?: string; link?: string }>;
 }) {
   const sp = await searchParams;
   const [content, skin, user] = await Promise.all([

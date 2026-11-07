@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireUser, updateDisplayName } from "@/lib/auth";
+import {
+  findUserById,
+  requireUser,
+  updateDisplayName,
+} from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { z } from "zod";
 
@@ -38,8 +42,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
 
-  let next = user;
-
   if (parsed.data.name !== undefined) {
     const updated = await updateDisplayName(user.id, parsed.data.name);
     if (!updated) {
@@ -48,34 +50,16 @@ export async function PATCH(request: Request) {
         { status: 400 },
       );
     }
-    next = updated;
   }
 
   if (parsed.data.notify_new_movies !== undefined) {
-    const rows = await sql<{
-      id: string;
-      email: string;
-      name: string;
-      is_admin: boolean;
-      notify_new_movies: boolean;
-      email_verified: boolean;
-    }>(
-      `update users set notify_new_movies = $1 where id = $2
-       returning id, email, name, is_admin, notify_new_movies, email_verified`,
-      [parsed.data.notify_new_movies, next.id],
-    );
-    if (rows[0]) {
-      next = {
-        id: String(rows[0].id),
-        email: String(rows[0].email),
-        name: String(rows[0].name ?? ""),
-        is_admin: Boolean(rows[0].is_admin),
-        notify_new_movies: Boolean(rows[0].notify_new_movies),
-        email_verified: Boolean(rows[0].email_verified),
-      };
-    }
+    await sql(`update users set notify_new_movies = $1 where id = $2`, [
+      parsed.data.notify_new_movies,
+      user.id,
+    ]);
   }
 
+  const next = await findUserById(user.id);
   return NextResponse.json(
     { user: next },
     { headers: { "cache-control": "private, no-store" } },

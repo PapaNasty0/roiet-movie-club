@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { createUser, findUserByEmail, upsertGoogleUser } from "@/lib/auth";
+import {
+  createUser,
+  findUserByEmail,
+  requireUser,
+  upsertGoogleUser,
+} from "@/lib/auth";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
 
 function googleConfigured() {
@@ -17,6 +22,14 @@ function oauthOrigin(request: Request) {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const origin = oauthOrigin(request);
+  const link = url.searchParams.get("link") === "1";
+
+  if (link) {
+    const sessionUser = await requireUser();
+    if (!sessionUser) {
+      return NextResponse.redirect(`${origin}/account?google=signin`);
+    }
+  }
 
   if (!googleConfigured()) {
     // Local-only demo Google — never available in production.
@@ -71,5 +84,16 @@ export async function GET(request: Request) {
     path: "/",
     maxAge: 600,
   });
+  if (link) {
+    res.cookies.set("rmc_oauth_link", "1", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 600,
+    });
+  } else {
+    res.cookies.delete("rmc_oauth_link");
+  }
   return res;
 }
