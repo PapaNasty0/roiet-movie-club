@@ -6,6 +6,7 @@ import type {
   Movie,
   Rsvp,
   RsvpAggregate,
+  RsvpAttendee,
   Skin,
   User,
 } from "./types";
@@ -71,6 +72,29 @@ export async function getRsvpAggregates(movieId: string): Promise<RsvpAggregate[
             coalesce(sum(adults + children), 0)::int as people
      from rsvps where movie_id = $1
      group by status`,
+    [movieId],
+  );
+}
+
+export async function listRsvpAttendees(
+  movieId: string,
+): Promise<RsvpAttendee[]> {
+  return sql<RsvpAttendee>(
+    `select r.user_id,
+            coalesce(nullif(trim(u.name), ''), split_part(u.email, '@', 1)) as display_name,
+            r.status,
+            r.adults,
+            r.children
+     from rsvps r
+     join users u on u.id = r.user_id
+     where r.movie_id = $1
+     order by
+       case r.status
+         when 'booked' then 0
+         when 'probably_go' then 1
+         else 2
+       end,
+       display_name`,
     [movieId],
   );
 }

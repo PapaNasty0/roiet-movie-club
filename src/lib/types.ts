@@ -7,6 +7,10 @@ export type User = {
   is_admin: boolean;
   notify_new_movies: boolean;
   email_verified: boolean;
+  /** True when a password hash is stored (email/password sign-in). */
+  has_password: boolean;
+  /** True when a real Google OAuth id is linked (not Neon Auth placeholders). */
+  has_google: boolean;
 };
 
 export type Skin = {
@@ -50,6 +54,14 @@ export type RsvpAggregate = {
   status: RsvpStatus;
   people: number;
   parties: number;
+};
+
+export type RsvpAttendee = {
+  user_id: string;
+  display_name: string;
+  status: RsvpStatus;
+  adults: number;
+  children: number;
 };
 
 export type ForumPost = {

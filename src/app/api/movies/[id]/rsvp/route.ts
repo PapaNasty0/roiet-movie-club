@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { listRsvpAttendees } from "@/lib/data";
 import { sql } from "@/lib/db";
 
 const schema = z.object({
@@ -23,10 +24,16 @@ export async function POST(
     return NextResponse.json({ error: "Invalid RSVP" }, { status: 400 });
   }
   if (parsed.data.adults + parsed.data.children < 1) {
-    return NextResponse.json({ error: "Add at least one person" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Add at least one person" },
+      { status: 400 },
+    );
   }
 
-  const movie = await sql(`select id from movies where id = $1 and published = true`, [id]);
+  const movie = await sql(
+    `select id from movies where id = $1 and published = true`,
+    [id],
+  );
   if (!movie[0]) {
     return NextResponse.json({ error: "Movie not found" }, { status: 404 });
   }
@@ -40,7 +47,13 @@ export async function POST(
        children = excluded.children,
        updated_at = now()
      returning id, movie_id, user_id, status, adults, children`,
-    [id, user.id, parsed.data.status, parsed.data.adults, parsed.data.children],
+    [
+      id,
+      user.id,
+      parsed.data.status,
+      parsed.data.adults,
+      parsed.data.children,
+    ],
   );
 
   const aggregates = await sql(
@@ -51,9 +64,10 @@ export async function POST(
      group by status`,
     [id],
   );
+  const attendees = await listRsvpAttendees(id);
 
   return NextResponse.json(
-    { rsvp: rows[0], aggregates },
+    { rsvp: rows[0], aggregates, attendees },
     { headers: { "cache-control": "private, no-store" } },
   );
 }
@@ -67,6 +81,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
   const { id } = await context.params;
-  await sql(`delete from rsvps where movie_id = $1 and user_id = $2`, [id, user.id]);
-  return NextResponse.json({ ok: true }, { headers: { "cache-control": "private, no-store" } });
+  await sql(`delete from rsvps where movie_id = $1 and user_id = $2`, [
+    id,
+    user.id,
+  ]);
+  const attendees = await listRsvpAttendees(id);
+  return NextResponse.json(
+    { ok: true, attendees },
+    { headers: { "cache-control": "private, no-store" } },
+  );
 }

@@ -10,6 +10,11 @@
 #
 # Secrets (create before first rollout):
 #   SESSION_SECRET, DATABASE_URL, DATABASE_URL_UNPOOLED, ADMIN_EMAIL
+#
+# Optional auth/email (create before a rollout that references them below):
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY, EMAIL_FROM
+# Plain-English guides: project docs/google-signin-setup.md and
+# docs/email-confirmation-setup.md
 
 runConfig:
   runtime: nodejs22
@@ -53,4 +58,26 @@ env:
     secret: ADMIN_EMAIL
     availability:
       - BUILD
+      - RUNTIME
+
+  # Google OAuth — create secrets first or this rollout will wait/fail.
+  - variable: GOOGLE_CLIENT_ID
+    secret: GOOGLE_CLIENT_ID
+    availability:
+      - RUNTIME
+
+  - variable: GOOGLE_CLIENT_SECRET
+    secret: GOOGLE_CLIENT_SECRET
+    availability:
+      - RUNTIME
+
+  # Resend email confirmation + new-movie notices.
+  - variable: RESEND_API_KEY
+    secret: RESEND_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: EMAIL_FROM
+    secret: EMAIL_FROM
+    availability:
       - RUNTIME

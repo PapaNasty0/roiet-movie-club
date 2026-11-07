@@ -9,6 +9,7 @@ import {
   getRsvpAggregates,
   getSkinById,
   getUserRsvp,
+  listRsvpAttendees,
 } from "@/lib/data";
 import { formatLength, formatShowtime } from "@/lib/format";
 
@@ -23,11 +24,12 @@ export default async function MovieDetailPage({
   const movie = await getMovie(id);
   if (!movie || !movie.published) notFound();
 
-  const [content, skin, user, aggregates] = await Promise.all([
+  const [content, skin, user, aggregates, attendees] = await Promise.all([
     getContentMap(),
     getSkinById(movie.skin_id),
     requireUser(),
     getRsvpAggregates(movie.id),
+    listRsvpAttendees(movie.id),
   ]);
   const myRsvp = user ? await getUserRsvp(movie.id, user.id) : null;
 
@@ -94,6 +96,7 @@ export default async function MovieDetailPage({
           signedIn={Boolean(user)}
           initial={myRsvp}
           aggregates={aggregates}
+          attendees={attendees}
         />
       </div>
     </SiteShell>
