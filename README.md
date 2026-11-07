@@ -4,7 +4,8 @@ Base site for Brian Leigh’s English-language movie meetups at Robinson Roi Et 
 
 ## Features (v1)
 
-- Email + password auth (email confirmation when Resend is configured; auto-verify when it isn’t), plus Google OAuth when secrets are set
+- Email + password auth (email confirmation when Resend is configured; `ADMIN_EMAIL` password bootstrap only while Resend is unset), plus Google OAuth when secrets are set
+- Account settings: change display name (shown on forum + RSVP lists)
 - Upcoming movies (admin-managed): trailer, synopsis, genre, times, length, rating, reviews summary
 - Logged-in RSVP: might go / will probably go / booked tickets + adult & child counts, with aggregates
 - Per-movie discussion forum
@@ -28,13 +29,13 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Without `DATABASE_URL`, the
 
 ### First admin
 
-No passwords are shipped in source. Become admin by registering or using Google with an email that matches `ADMIN_EMAIL` (default `bjleigh@gmail.com`). When `RESEND_API_KEY` is unset, password signups are auto-verified and signed in immediately (including the admin email). When Resend is configured, password signups must confirm email before signing in.
+No passwords are shipped in source. Become admin by registering or using Google with an email that matches `ADMIN_EMAIL` (default `bjleigh@gmail.com`). When `RESEND_API_KEY` is unset, only `ADMIN_EMAIL` can finish setup by signing in with the registered password (marks verified). Everyone else needs Resend confirmation or Google. When Resend is configured, all new password signups must confirm email before signing in.
 
 ## How admin is assigned
 
 1. Any new account whose email matches `ADMIN_EMAIL` (case-insensitive) is marked `is_admin`.
 2. Bind `ADMIN_EMAIL` as a secret if you want a different admin address than the default.
-3. With Resend configured, password accounts must confirm email before they can sign in. Without Resend, new signups are auto-verified. Google accounts are always treated as verified.
+3. With Resend configured, password accounts must confirm email before they can sign in. Without Resend, only `ADMIN_EMAIL` gets the password bootstrap. Google accounts are always treated as verified.
 
 ## Secrets (Firebase / hosting)
 
@@ -50,8 +51,12 @@ No passwords are shipped in source. Become admin by registering or using Google 
 | `APP_ORIGIN` | Canonical origin — set to `https://movieclub101.com` in production (`apphosting.yaml`) |
 | `DATABASE_URL_UNPOOLED` | Optional — non-pooled URL for migrations (Neon-style) |
 
-Google OAuth redirect URI: `https://movieclub101.com/api/auth/google/callback`  
-(Also add the temporary `*.hosted.app` callback while DNS is pending.)
+Google OAuth authorized redirect URIs (both required):
+
+- `https://movieclub--movieclub101-da5f1.asia-east1.hosted.app/api/auth/google/callback`
+- `https://movieclub101.com/api/auth/google/callback`
+
+Plain-English setup: project store `docs/google-signin-setup.md` and `docs/email-confirmation-setup.md`.
 
 ## Firebase App Hosting (production)
 

@@ -9,18 +9,22 @@ export function AccountForms({
   user,
   googleReady,
   neonAuthReady = false,
+  banner,
 }: {
   user: User | null;
   googleReady: boolean;
   neonAuthReady?: boolean;
+  banner?: string | null;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [displayName, setDisplayName] = useState(user?.name ?? "");
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
+  const [info, setInfo] = useState(banner || "");
+  const [nameMessage, setNameMessage] = useState("");
   const [notify, setNotify] = useState(user?.notify_new_movies ?? false);
   const [busy, setBusy] = useState(false);
 
@@ -114,12 +118,33 @@ export function AccountForms({
     });
   }
 
+  async function saveDisplayName(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setNameMessage("");
+    setError("");
+    const res = await fetch("/api/auth/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: displayName }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setError(data.error || "Could not save display name");
+      return;
+    }
+    if (data.user?.name) setDisplayName(data.user.name);
+    setNameMessage("Display name saved. Forum posts and RSVPs will show it.");
+    router.refresh();
+  }
+
   if (user) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto max-w-lg space-y-8">
         <div>
           <p className="text-sm uppercase tracking-[0.18em] text-[color:var(--muted)]">
-            Signed in
+            Account
           </p>
           <h1 className="font-display mt-2 text-4xl">
             {user.name || user.email}
@@ -130,7 +155,39 @@ export function AccountForms({
               Admin access enabled
             </p>
           ) : null}
+          {info ? (
+            <p className="mt-3 text-sm text-[color:var(--accent-soft)]">{info}</p>
+          ) : null}
         </div>
+
+        <form onSubmit={saveDisplayName} className="space-y-3">
+          <h2 className="font-display text-2xl">Display name</h2>
+          <p className="text-sm text-[color:var(--muted)]">
+            This name shows on forum posts and RSVP lists.
+          </p>
+          <label className="block space-y-1 text-sm">
+            <span className="text-[color:var(--muted)]">Name</span>
+            <input
+              className="field"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={80}
+              required
+            />
+          </label>
+          {nameMessage ? (
+            <p className="text-sm text-[color:var(--accent-soft)]">
+              {nameMessage}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="text-sm text-[color:var(--danger)]">{error}</p>
+          ) : null}
+          <button className="btn-primary" disabled={busy} type="submit">
+            Save name
+          </button>
+        </form>
+
         <label className="flex items-start gap-3 text-sm">
           <input
             type="checkbox"
@@ -141,11 +198,33 @@ export function AccountForms({
           <span>
             Email me when a new English movie is posted
             <span className="mt-1 block text-[color:var(--muted)]">
-              Preference is saved now. Delivery needs an email provider secret
-              (see README).
+              Preference is saved now. Delivery needs Resend set up (see email
+              confirmation guide).
             </span>
           </span>
         </label>
+
+        {!googleReady && user.is_admin ? (
+          <div className="space-y-2 border-t border-[color:var(--line)] pt-6 text-sm text-[color:var(--muted)]">
+            <p className="text-[color:var(--accent)]">Admin: Google sign-in</p>
+            <p>
+              Google sign-in is off until you add{" "}
+              <code className="text-[color:var(--accent-soft)]">
+                GOOGLE_CLIENT_ID
+              </code>{" "}
+              and{" "}
+              <code className="text-[color:var(--accent-soft)]">
+                GOOGLE_CLIENT_SECRET
+              </code>{" "}
+              in Firebase App Hosting secrets. Step-by-step guide:{" "}
+              <span className="text-[color:var(--ink)]">
+                docs/google-signin-setup.md
+              </span>{" "}
+              in the project notes.
+            </p>
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap gap-3">
           {user.is_admin ? (
             <a href="/admin" className="btn-primary">
@@ -170,6 +249,9 @@ export function AccountForms({
             : "Email + password. RSVPs and forum posts require an account."}
         </p>
       </div>
+      {info ? (
+        <p className="text-sm text-[color:var(--accent-soft)]">{info}</p>
+      ) : null}
       <div className="flex gap-3 text-sm">
         <button
           type="button"
@@ -230,11 +312,6 @@ export function AccountForms({
         {error ? (
           <p className="text-sm text-[color:var(--danger)]">{error}</p>
         ) : null}
-        {info ? (
-          <p className="break-all text-sm text-[color:var(--accent-soft)]">
-            {info}
-          </p>
-        ) : null}
         <button className="btn-primary w-full" disabled={busy} type="submit">
           {mode === "login" ? "Sign in" : "Create account"}
         </button>
@@ -246,7 +323,9 @@ export function AccountForms({
           disabled={busy}
           onClick={() => void neonAuthSubmit()}
         >
-          {mode === "login" ? "Sign in with Neon Auth" : "Register with Neon Auth"}
+          {mode === "login"
+            ? "Sign in with Neon Auth"
+            : "Register with Neon Auth"}
         </button>
       ) : null}
       {googleReady ? (
@@ -256,7 +335,11 @@ export function AccountForms({
         >
           Continue with Google
         </a>
-      ) : null}
+      ) : (
+        <p className="text-center text-sm text-[color:var(--muted)]">
+          Google sign-in coming soon
+        </p>
+      )}
     </div>
   );
 }

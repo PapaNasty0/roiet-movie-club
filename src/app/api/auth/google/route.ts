@@ -9,15 +9,14 @@ function googleConfigured() {
   );
 }
 
-function appOrigin(request: Request) {
-  const env = process.env.APP_ORIGIN?.trim();
-  if (env) return env.replace(/\/$/, "");
+/** Use the request host so both hosted.app and movieclub101.com work. */
+function oauthOrigin(request: Request) {
   return new URL(request.url).origin;
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const origin = appOrigin(request);
+  const origin = oauthOrigin(request);
 
   if (!googleConfigured()) {
     // Local-only demo Google — never available in production.
@@ -59,6 +58,13 @@ export async function GET(request: Request) {
 
   const res = NextResponse.redirect(auth.toString());
   res.cookies.set("rmc_oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 600,
+  });
+  res.cookies.set("rmc_oauth_origin", origin, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

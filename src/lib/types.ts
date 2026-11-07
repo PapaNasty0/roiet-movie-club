@@ -52,6 +52,14 @@ export type RsvpAggregate = {
   parties: number;
 };
 
+export type RsvpAttendee = {
+  user_id: string;
+  display_name: string;
+  status: RsvpStatus;
+  adults: number;
+  children: number;
+};
+
 export type ForumPost = {
   id: string;
   movie_id: string;

@@ -6,7 +6,30 @@ import { getActiveSkin } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountPage() {
+function bannerFromParams(sp: {
+  google?: string;
+  verify?: string;
+}): string | null {
+  if (sp.verify === "ok") return "Email confirmed — you are signed in.";
+  if (sp.verify === "invalid")
+    return "That confirmation link is invalid or expired. Try registering again.";
+  if (sp.verify === "missing") return "Missing confirmation token.";
+  if (sp.google === "missing")
+    return "Google sign-in is not set up yet. Use email and password for now.";
+  if (sp.google === "error")
+    return "Google sign-in failed. Please try again or use email.";
+  if (sp.google === "unverified")
+    return "Your Google account email is not verified.";
+  if (sp.google === "demo") return "Signed in with the local Google demo.";
+  return null;
+}
+
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ google?: string; verify?: string }>;
+}) {
+  const sp = await searchParams;
   const [content, skin, user] = await Promise.all([
     getContentMap(),
     getActiveSkin(),
@@ -28,6 +51,7 @@ export default async function AccountPage() {
           user={user}
           googleReady={googleReady}
           neonAuthReady={neonAuthReady}
+          banner={bannerFromParams(sp)}
         />
       </div>
     </SiteShell>

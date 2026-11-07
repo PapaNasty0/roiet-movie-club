@@ -4,7 +4,7 @@ import { sql } from "./db";
 import type { User } from "./types";
 import { readSession } from "./session";
 import { ADMIN_EMAIL } from "./constants";
-import { sendVerificationEmail } from "./email";
+import { resendConfigured, sendVerificationEmail } from "./email";
 
 export function adminEmail(): string {
   return ADMIN_EMAIL;
@@ -92,6 +92,39 @@ export async function resetUnverifiedPasswordUser(input: {
   return mapUser(rows[0]);
 }
 
+/**
+ * When Resend is unset, ADMIN_EMAIL cannot receive a confirmation link.
+ * Correct password marks that account verified. Closes once RESEND_API_KEY
+ * is bound. Never applies to non-admin emails.
+ */
+export function adminPasswordBootstrapAllowed(email: string): boolean {
+  return !resendConfigured() && email.trim().toLowerCase() === ADMIN_EMAIL;
+}
+
+export async function markEmailVerified(userId: string): Promise<User | null> {
+  const rows = await sql<Record<string, unknown>>(
+    `update users set email_verified = true, is_admin = case
+       when lower(email) = lower($2) then true else is_admin end
+     where id = $1
+     returning ${USER_COLS}`,
+    [userId, ADMIN_EMAIL],
+  );
+  return rows[0] ? mapUser(rows[0]) : null;
+}
+
+export async function updateDisplayName(
+  userId: string,
+  name: string,
+): Promise<User | null> {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  const rows = await sql<Record<string, unknown>>(
+    `update users set name = $1 where id = $2 returning ${USER_COLS}`,
+    [trimmed.slice(0, 80), userId],
+  );
+  return rows[0] ? mapUser(rows[0]) : null;
+}
+
 export async function verifyPassword(
   email: string,
   password: string,
@@ -106,7 +139,18 @@ export async function verifyPassword(
   const ok = await bcrypt.compare(password, String(row.password_hash));
   if (!ok) return { user: null, reason: "invalid" };
   const user = mapUser(row);
-  if (!user.email_verified) return { user: null, reason: "unverified" };
+  if (!user.email_verified) {
+    if (adminPasswordBootstrapAllowed(user.email)) {
+      const bootstrapped = await markEmailVerified(user.id);
+      if (bootstrapped) {
+        console.info(
+          `[auth] Admin password bootstrap verified ${bootstrapped.email} (RESEND unset)`,
+        );
+        return { user: bootstrapped };
+      }
+    }
+    return { user: null, reason: "unverified" };
+  }
   return { user };
 }
 

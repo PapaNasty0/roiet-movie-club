@@ -3,20 +3,22 @@ import { cookies } from "next/headers";
 import { upsertGoogleUser } from "@/lib/auth";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
 
-function appOrigin(request: Request) {
-  const env = process.env.APP_ORIGIN?.trim();
-  if (env) return env.replace(/\/$/, "");
+function oauthOrigin(request: Request, stored?: string | null) {
+  if (stored?.startsWith("http")) return stored.replace(/\/$/, "");
   return new URL(request.url).origin;
 }
 
 export async function GET(request: Request) {
-  const origin = appOrigin(request);
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const jar = await cookies();
   const expected = jar.get("rmc_oauth_state")?.value;
+  const storedOrigin = jar.get("rmc_oauth_origin")?.value;
   jar.delete("rmc_oauth_state");
+  jar.delete("rmc_oauth_origin");
+
+  const origin = oauthOrigin(request, storedOrigin);
 
   if (!code || !state || !expected || state !== expected) {
     return NextResponse.redirect(`${origin}/account?google=error`);
@@ -28,6 +30,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/account?google=missing`);
   }
 
+  // Must match the redirect_uri used when starting OAuth.
   const redirectUri = `${origin}/api/auth/google/callback`;
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -48,9 +51,12 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/account?google=error`);
   }
 
-  const profileRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-    headers: { Authorization: `Bearer ${tokenJson.access_token}` },
-  });
+  const profileRes = await fetch(
+    "https://www.googleapis.com/oauth2/v2/userinfo",
+    {
+      headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+    },
+  );
   if (!profileRes.ok) {
     return NextResponse.redirect(`${origin}/account?google=error`);
   }
