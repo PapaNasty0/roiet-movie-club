@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EditableText } from "@/components/EditableText";
 import { SiteShell } from "@/components/SiteShell";
