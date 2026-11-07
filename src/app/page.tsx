@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { EditableText } from "@/components/EditableText";
 import { SiteShell } from "@/components/SiteShell";
 import { requireUser } from "@/lib/auth";
@@ -61,28 +60,18 @@ export default async function HomePage() {
               contentKey="home.cta_primary"
               value={content["home.cta_primary"] || "See upcoming movies"}
               isAdmin={isAdmin}
-              as="span"
+              href="/movies"
+              linkClassName="btn-primary"
               inline
-            >
-              {(text) => (
-                <Link href="/movies" className="btn-primary">
-                  {text}
-                </Link>
-              )}
-            </EditableText>
+            />
             <EditableText
               contentKey="home.cta_secondary"
               value={content["home.cta_secondary"] || "Join the club"}
               isAdmin={isAdmin}
-              as="span"
+              href="/account"
+              linkClassName="btn-ghost"
               inline
-            >
-              {(text) => (
-                <Link href="/account" className="btn-ghost">
-                  {text}
-                </Link>
-              )}
-            </EditableText>
+            />
           </div>
         </div>
       </section>
@@ -141,15 +130,10 @@ export default async function HomePage() {
                   contentKey="home.next_cta"
                   value={content["home.next_cta"] || "Movie details & RSVP"}
                   isAdmin={isAdmin}
-                  as="span"
+                  href={`/movies/${next.id}`}
+                  linkClassName="btn-primary inline-flex"
                   inline
-                >
-                  {(text) => (
-                    <Link href={`/movies/${next.id}`} className="btn-primary inline-flex">
-                      {text}
-                    </Link>
-                  )}
-                </EditableText>
+                />
               </div>
             </div>
             {next.youtube_trailer_id ? (

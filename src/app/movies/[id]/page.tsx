@@ -107,18 +107,10 @@ export default async function MovieDetailPage({
             contentKey="movie.forum_link"
             value={content["movie.forum_link"] || "Open this movie’s forum thread →"}
             isAdmin={isAdmin}
-            as="span"
+            href={`/forum/${movie.id}`}
+            linkClassName="inline-flex text-[color:var(--accent)] hover:underline"
             inline
-          >
-            {(text) => (
-              <Link
-                href={`/forum/${movie.id}`}
-                className="inline-flex text-[color:var(--accent)] hover:underline"
-              >
-                {text}
-              </Link>
-            )}
-          </EditableText>
+          />
         </div>
         <RsvpPanel
           movieId={movie.id}

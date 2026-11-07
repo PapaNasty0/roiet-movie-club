@@ -9,9 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-type RenderText = (text: string) => ReactNode;
 
 type EditableTextProps = {
   contentKey: string;
@@ -21,7 +20,10 @@ type EditableTextProps = {
   className?: string;
   multiline?: boolean;
   inline?: boolean;
-  children?: ReactNode | RenderText;
+  /** When set, render the text as a Next.js Link (safe from Server Components). */
+  href?: string;
+  linkClassName?: string;
+  children?: ReactNode;
 };
 
 function PencilIcon() {
@@ -43,15 +45,6 @@ function PencilIcon() {
   );
 }
 
-function renderBody(
-  children: ReactNode | RenderText | undefined,
-  text: string,
-): ReactNode {
-  if (typeof children === "function") return children(text);
-  if (children != null) return children;
-  return text;
-}
-
 export function EditableText({
   contentKey,
   value,
@@ -60,6 +53,8 @@ export function EditableText({
   className,
   multiline = false,
   inline,
+  href,
+  linkClassName,
   children,
 }: EditableTextProps) {
   const router = useRouter();
@@ -77,11 +72,21 @@ export function EditableText({
     setDraft(value);
   }, [value]);
 
-  const useInline = inline ?? (Tag === "span" || typeof children === "function");
+  const useInline = inline ?? (Tag === "span" || Boolean(href));
   const Wrapper: ElementType = useInline ? "span" : "div";
-  const body = renderBody(children, display);
-  const contentNode =
-    typeof children === "function" ? body : <Tag className={className}>{body}</Tag>;
+
+  let contentNode: ReactNode;
+  if (href) {
+    contentNode = (
+      <Link href={href} className={linkClassName || className}>
+        {display}
+      </Link>
+    );
+  } else if (children != null) {
+    contentNode = <Tag className={className}>{children}</Tag>;
+  } else {
+    contentNode = <Tag className={className}>{display}</Tag>;
+  }
 
   if (!isAdmin) {
     return <>{contentNode}</>;

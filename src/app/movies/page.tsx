@@ -80,18 +80,10 @@ export default async function MoviesPage() {
                     contentKey="movies.detail_cta"
                     value={content["movies.detail_cta"] || "Details, trailer & RSVP →"}
                     isAdmin={isAdmin}
-                    as="span"
+                    href={`/movies/${m.id}`}
+                    linkClassName="mt-5 inline-flex text-[color:var(--accent)] hover:underline"
                     inline
-                  >
-                    {(text) => (
-                      <Link
-                        href={`/movies/${m.id}`}
-                        className="mt-5 inline-flex text-[color:var(--accent)] hover:underline"
-                      >
-                        {text}
-                      </Link>
-                    )}
-                  </EditableText>
+                  />
                 </div>
               </article>
             ))
