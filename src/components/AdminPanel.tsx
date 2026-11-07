@@ -131,18 +131,36 @@ export function AdminPanel({
 
   async function addPhoto() {
     setBusy(true);
-    const res = await fetch("/api/admin/gallery", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...photo,
-        outing_date: photo.outing_date || null,
-      }),
-    });
+    let res: Response;
+    const fileInput = document.getElementById(
+      "gallery-file",
+    ) as HTMLInputElement | null;
+    const file = fileInput?.files?.[0];
+    if (file) {
+      const form = new FormData();
+      form.set("file", file);
+      form.set("title", photo.title);
+      form.set("caption", photo.caption);
+      if (photo.outing_date) form.set("outing_date", photo.outing_date);
+      res = await fetch("/api/admin/gallery/upload", {
+        method: "POST",
+        body: form,
+      });
+    } else {
+      res = await fetch("/api/admin/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...photo,
+          outing_date: photo.outing_date || null,
+        }),
+      });
+    }
     setBusy(false);
     setMessage(res.ok ? "Photo added." : "Could not add photo.");
     if (res.ok) {
       setPhoto({ title: "", caption: "", image_url: "", outing_date: "" });
+      if (fileInput) fileInput.value = "";
       router.refresh();
     }
   }
@@ -366,12 +384,19 @@ export function AdminPanel({
               />
             </label>
             <label className="block space-y-1 text-sm sm:col-span-2">
-              <span className="text-[color:var(--muted)]">Image URL</span>
+              <span className="text-[color:var(--muted)]">
+                Upload to Neon Object Storage (preferred)
+              </span>
+              <input id="gallery-file" className="field" type="file" accept="image/*" />
+            </label>
+            <label className="block space-y-1 text-sm sm:col-span-2">
+              <span className="text-[color:var(--muted)]">
+                Or paste an image URL
+              </span>
               <input
                 className="field"
                 value={photo.image_url}
                 onChange={(e) => setPhoto({ ...photo, image_url: e.target.value })}
-                required
               />
             </label>
             <label className="block space-y-1 text-sm sm:col-span-2">

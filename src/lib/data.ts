@@ -113,8 +113,15 @@ export async function listForumPosts(movieId: string): Promise<ForumPost[]> {
 }
 
 export async function listGallery(): Promise<GalleryPhoto[]> {
-  return sql<GalleryPhoto>(
+  const rows = await sql<GalleryPhoto>(
     `select * from gallery_photos order by sort_order, outing_date desc nulls last`,
+  );
+  const { resolveImageUrl } = await import("./storage");
+  return Promise.all(
+    rows.map(async (p) => ({
+      ...p,
+      image_url: await resolveImageUrl(p.image_url),
+    })),
   );
 }
 

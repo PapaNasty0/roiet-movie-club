@@ -79,6 +79,8 @@ Cursor publish-app remains OK for previews; Firebase is production for the custo
 
 ## Scripts
 
+- `npm run prove:neon` — smoke-check Neon Postgres / Auth / Object Storage
+
 - `npm run dev` — local Next.js
 - `npm run build` — production build + migrate when `DATABASE_URL` is set
 - `npm start` — run production server
