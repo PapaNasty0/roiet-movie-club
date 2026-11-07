@@ -48,8 +48,16 @@ env:
       - BUILD
       - RUNTIME
 
+  - variable: DATABASE_URL_UNPOOLED
+    secret: DATABASE_URL_UNPOOLED
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: ADMIN_EMAIL
     secret: ADMIN_EMAIL
     availability:
       - BUILD
       - RUNTIME
+  - variable: DATABASE_URL_UNPOOLED
+    secret: DATABASE_URL_UNPOOLED
