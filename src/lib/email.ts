@@ -1,9 +1,56 @@
 /**
- * Email notifications for new movies.
+ * Email notifications and verification.
  *
- * TODO: Wire a real provider when RESEND_API_KEY (or similar) is bound.
- * Until then, opt-in preferences are stored and sends are logged as stubs.
+ * When RESEND_API_KEY is unset, sends are stubbed (logged). Local/dev
+ * registration also returns the verify URL so you can confirm without mail.
  */
+
+export async function sendVerificationEmail(input: {
+  email: string;
+  name: string;
+  verifyUrl: string;
+}): Promise<{ stubbed: boolean; verifyUrl?: string }> {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) {
+    console.info(
+      `[email stub] Verification link for ${input.email}: ${input.verifyUrl}`,
+    );
+    const expose =
+      process.env.NODE_ENV !== "production" ||
+      process.env.ALLOW_DEV_VERIFY_URL === "1";
+    return {
+      stubbed: true,
+      verifyUrl: expose ? input.verifyUrl : undefined,
+    };
+  }
+
+  const from =
+    process.env.EMAIL_FROM?.trim() ||
+    "RoiEt Movie Club <onboarding@resend.dev>";
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: input.email,
+        subject: "Confirm your RoiEt Movie Club email",
+        text: `Hi ${input.name || "there"},\n\nConfirm your email to finish joining RoiEt English Movie Club:\n\n${input.verifyUrl}\n\nThis link expires in 24 hours.\n`,
+      }),
+    });
+    if (!res.ok) {
+      console.error("[email] verification send failed", await res.text());
+      return { stubbed: false };
+    }
+  } catch (err) {
+    console.error("[email] verification send failed", err);
+    return { stubbed: false };
+  }
+  return { stubbed: false };
+}
 
 export async function notifyNewMovieSubscribers(input: {
   title: string;
@@ -20,9 +67,9 @@ export async function notifyNewMovieSubscribers(input: {
     return { sent: 0, stubbed: true };
   }
 
-  // Real Resend path (runs only when secret is present on the published host).
   const from =
-    process.env.EMAIL_FROM?.trim() || "RoiEt Movie Club <onboarding@resend.dev>";
+    process.env.EMAIL_FROM?.trim() ||
+    "RoiEt Movie Club <onboarding@resend.dev>";
   let sent = 0;
   for (const r of input.recipients) {
     try {

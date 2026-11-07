@@ -1,11 +1,14 @@
 import { queryRaw } from "./db";
 import { CONTENT_DEFAULTS } from "./content";
 import { DEFAULT_SKIN, NOIR_SKIN } from "./skins";
-import { ADMIN_EMAIL } from "./constants";
-import bcrypt from "bcryptjs";
 
 const g = globalThis as typeof globalThis & { __rmcSeeded?: boolean };
 
+/**
+ * Seeds skins, site content, sample movies, and gallery only.
+ * Never creates users or passwords — admins register (verified email)
+ * or sign in with Google using ADMIN_EMAIL.
+ */
 export async function seedIfEmpty(): Promise<void> {
   if (g.__rmcSeeded) return;
   const existing = await queryRaw<{ n: number }>(
@@ -50,37 +53,19 @@ export async function seedIfEmpty(): Promise<void> {
     [DEFAULT_SKIN.id],
   );
 
-  const admin = ADMIN_EMAIL;
-  const hash = await bcrypt.hash("movieclub-admin", 10);
-  await queryRaw(
-    `insert into users (email, password_hash, name, is_admin, notify_new_movies)
-     values ($1, $2, $3, true, true)
-     on conflict (email) do update set is_admin = true`,
-    [admin, hash, "Brian Leigh"],
-  );
-
-  // Demo member for local RSVP / forum testing
-  const memberHash = await bcrypt.hash("welcome123", 10);
-  await queryRaw(
-    `insert into users (email, password_hash, name, is_admin, notify_new_movies)
-     values ($1, $2, $3, false, true)
-     on conflict (email) do nothing`,
-    ["member@example.com", memberHash, "Demo Member"],
-  );
-
   const start = new Date();
   start.setDate(start.getDate() + ((6 - start.getDay() + 7) % 7 || 7)); // next Saturday
   start.setHours(13, 30, 0, 0);
   const end = new Date(start.getTime() + 125 * 60 * 1000);
 
-  const movies = await queryRaw<{ id: string }>(
+  await queryRaw(
     `insert into movies (
       title, synopsis, genre, rating, length_minutes,
       showtime_start, showtime_end, youtube_trailer_id, reviews_summary,
       poster_url, cinema, skin_id, published
     ) values (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true
-    ) returning id`,
+    )`,
     [
       "The Wild Robot",
       "A robot shipwrecked on a wild island must learn to adapt, make friends, and become more than she was built to be. Warm, witty, and perfect for mixed-age club outings.",
@@ -146,23 +131,6 @@ export async function seedIfEmpty(): Promise<void> {
       "2025-10-05",
     ],
   );
-
-  if (movies[0]?.id) {
-    const users = await queryRaw<{ id: string }>(
-      `select id from users where email = $1`,
-      [admin],
-    );
-    if (users[0]) {
-      await queryRaw(
-        `insert into forum_posts (movie_id, user_id, body) values ($1, $2, $3)`,
-        [
-          movies[0].id,
-          users[0].id,
-          "Looking forward to this one — afternoon show works well for families. Reply here if you need a meetup spot in the lobby.",
-        ],
-      );
-    }
-  }
 
   g.__rmcSeeded = true;
 }

@@ -6,6 +6,7 @@ export type User = {
   name: string;
   is_admin: boolean;
   notify_new_movies: boolean;
+  email_verified: boolean;
 };
 
 export type Skin = {

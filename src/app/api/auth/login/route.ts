@@ -14,11 +14,26 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
   }
-  const user = await verifyPassword(parsed.data.email, parsed.data.password);
-  if (!user) {
-    return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+  const result = await verifyPassword(parsed.data.email, parsed.data.password);
+  if (result.reason === "unverified") {
+    return NextResponse.json(
+      {
+        error:
+          "Confirm your email before signing in. Check your inbox for the link.",
+      },
+      { status: 403 },
+    );
   }
-  const token = await createSessionToken(user);
+  if (!result.user) {
+    return NextResponse.json(
+      { error: "Invalid email or password" },
+      { status: 401 },
+    );
+  }
+  const token = await createSessionToken(result.user);
   await setSessionCookie(token);
-  return NextResponse.json({ user }, { headers: { "cache-control": "private, no-store" } });
+  return NextResponse.json(
+    { user: result.user },
+    { headers: { "cache-control": "private, no-store" } },
+  );
 }

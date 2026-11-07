@@ -5,10 +5,19 @@ import type { User } from "./types";
 const COOKIE = "rmc_session";
 
 function secretKey() {
-  const raw =
-    process.env.SESSION_SECRET?.trim() ||
-    "local-dev-only-session-secret-change-me";
-  return new TextEncoder().encode(raw);
+  const fromEnv = process.env.SESSION_SECRET?.trim();
+  if (fromEnv) {
+    return new TextEncoder().encode(fromEnv);
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET must be set in production");
+  }
+  // Local only: ephemeral random secret (never a fixed public string).
+  const g = globalThis as typeof globalThis & { __rmcSessionSecret?: Uint8Array };
+  if (!g.__rmcSessionSecret) {
+    g.__rmcSessionSecret = crypto.getRandomValues(new Uint8Array(32));
+  }
+  return g.__rmcSessionSecret;
 }
 
 export type SessionPayload = {

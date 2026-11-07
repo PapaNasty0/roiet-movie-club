@@ -4,7 +4,7 @@ Base site for Brian Leigh’s English-language movie meetups at Robinson Roi Et 
 
 ## Features (v1)
 
-- Email + password auth and Google OAuth (demo Google login when OAuth secrets are unset)
+- Email + password auth with email confirmation, plus Google OAuth (demo Google login when OAuth secrets are unset)
 - Upcoming movies (admin-managed): trailer, synopsis, genre, times, length, rating, reviews summary
 - Logged-in RSVP: might go / will probably go / booked tickets + adult & child counts, with aggregates
 - Per-movie discussion forum
@@ -24,36 +24,30 @@ npm install
 env -u DATABASE_URL npm run dev
 ```
 
-Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Without `DATABASE_URL`, the app uses in-memory PGlite and seeds sample data on first query.
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Without `DATABASE_URL`, the app uses in-memory PGlite and seeds sample movies/gallery on first query (no user accounts).
 
-### Seeded accounts
+### First admin
 
-| Email | Password | Role |
-| --- | --- | --- |
-| `bjleigh@gmail.com` (or `ADMIN_EMAIL`) | `movieclub-admin` | Admin |
-| `member@example.com` | `welcome123` | Member |
-
-Change the admin password after first login in production.
+No passwords are shipped in source. Become admin by registering or using Google with an email that matches `ADMIN_EMAIL` (default `bjleigh@gmail.com`), then confirming email for password signups. When Resend is unset locally, the register API returns a `verifyUrl` you can open to confirm.
 
 ## How admin is assigned
 
-1. Seed creates an admin user for `ADMIN_EMAIL` (default `bjleigh@gmail.com`) with password `movieclub-admin`.
-2. Any new account whose email matches `ADMIN_EMAIL` (case-insensitive) is marked `is_admin`.
-3. Bind `ADMIN_EMAIL` as an app secret if you want a different admin address than the default.
+1. Any new account whose email matches `ADMIN_EMAIL` (case-insensitive) is marked `is_admin`.
+2. Bind `ADMIN_EMAIL` as a secret if you want a different admin address than the default.
+3. Password accounts must confirm email before they can sign in; Google accounts are treated as verified.
 
-## Secrets to bind (publish-app)
+## Secrets (Firebase / hosting)
 
 | Name | Purpose |
 | --- | --- |
-| `SESSION_SECRET` | JWT cookie signing (required in production) |
+| `SESSION_SECRET` | JWT cookie signing (**required in production**) |
 | `GOOGLE_CLIENT_ID` | Google OAuth |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `ADMIN_EMAIL` | Email treated as admin on signup/seed |
-| `RESEND_API_KEY` | Optional — enables new-movie email sends |
+| `ADMIN_EMAIL` | Email treated as admin on signup |
+| `RESEND_API_KEY` | Optional — verification + new-movie email sends |
 | `EMAIL_FROM` | Optional — From address for Resend |
-| `APP_ORIGIN` | Optional — canonical origin for OAuth redirects |
-
-`DATABASE_URL` is provided by Cursor when the app declares Postgres (`cursor-app.json` / `migrations/`).
+| `APP_ORIGIN` | Optional — canonical origin for OAuth / verify links |
+| `DATABASE_URL` | Postgres connection (Firebase / host) |
 
 Google OAuth redirect URI: `https://<your-app-host>/api/auth/google/callback`
 
@@ -66,3 +60,5 @@ Google OAuth redirect URI: `https://<your-app-host>/api/auth/google/callback`
 ## Stack
 
 Next.js (App Router), Postgres via `pg` / PGlite fallback, cookie sessions (`jose`), Tailwind CSS.
+
+Production hosting target: Firebase project `movieclub101` (custom domain `movieclub101.com`).

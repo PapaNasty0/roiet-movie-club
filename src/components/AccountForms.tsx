@@ -17,6 +17,7 @@ export function AccountForms({
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [notify, setNotify] = useState(user?.notify_new_movies ?? false);
   const [busy, setBusy] = useState(false);
 
@@ -24,17 +25,31 @@ export function AccountForms({
     e.preventDefault();
     setBusy(true);
     setError("");
-    const res = await fetch(`/api/auth/${mode === "login" ? "login" : "register"}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        mode === "login" ? { email, password } : { email, password, name },
-      ),
-    });
+    setInfo("");
+    const res = await fetch(
+      `/api/auth/${mode === "login" ? "login" : "register"}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          mode === "login" ? { email, password } : { email, password, name },
+        ),
+      },
+    );
     const data = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
       setError(data.error || "Something went wrong");
+      return;
+    }
+    if (data.pendingVerification) {
+      setInfo(
+        data.verifyUrl
+          ? `Confirm your email to finish. Local link: ${data.verifyUrl}`
+          : data.message ||
+              "Check your email for a confirmation link before signing in.",
+      );
+      setMode("login");
       return;
     }
     router.refresh();
@@ -58,11 +73,17 @@ export function AccountForms({
     return (
       <div className="space-y-6">
         <div>
-          <p className="text-sm uppercase tracking-[0.18em] text-[color:var(--muted)]">Signed in</p>
-          <h1 className="font-display mt-2 text-4xl">{user.name || user.email}</h1>
+          <p className="text-sm uppercase tracking-[0.18em] text-[color:var(--muted)]">
+            Signed in
+          </p>
+          <h1 className="font-display mt-2 text-4xl">
+            {user.name || user.email}
+          </h1>
           <p className="mt-2 text-[color:var(--muted)]">{user.email}</p>
           {user.is_admin ? (
-            <p className="mt-3 text-[color:var(--accent)]">Admin access enabled</p>
+            <p className="mt-3 text-[color:var(--accent)]">
+              Admin access enabled
+            </p>
           ) : null}
         </div>
         <label className="flex items-start gap-3 text-sm">
@@ -75,7 +96,8 @@ export function AccountForms({
           <span>
             Email me when a new English movie is posted
             <span className="mt-1 block text-[color:var(--muted)]">
-              Preference is saved now. Delivery needs an email provider secret (see README).
+              Preference is saved now. Delivery needs an email provider secret
+              (see README).
             </span>
           </span>
         </label>
@@ -98,20 +120,29 @@ export function AccountForms({
       <div>
         <h1 className="font-display text-4xl">Join the club</h1>
         <p className="mt-2 text-[color:var(--muted)]">
-          Email + password, or Google. RSVPs and forum posts require an account.
+          Email + password (confirm your email), or Google. RSVPs and forum
+          posts require an account.
         </p>
       </div>
       <div className="flex gap-3 text-sm">
         <button
           type="button"
-          className={mode === "login" ? "text-[color:var(--accent)]" : "text-[color:var(--muted)]"}
+          className={
+            mode === "login"
+              ? "text-[color:var(--accent)]"
+              : "text-[color:var(--muted)]"
+          }
           onClick={() => setMode("login")}
         >
           Sign in
         </button>
         <button
           type="button"
-          className={mode === "register" ? "text-[color:var(--accent)]" : "text-[color:var(--muted)]"}
+          className={
+            mode === "register"
+              ? "text-[color:var(--accent)]"
+              : "text-[color:var(--muted)]"
+          }
           onClick={() => setMode("register")}
         >
           Register
@@ -121,7 +152,12 @@ export function AccountForms({
         {mode === "register" ? (
           <label className="block space-y-1 text-sm">
             <span className="text-[color:var(--muted)]">Name</span>
-            <input className="field" value={name} onChange={(e) => setName(e.target.value)} required />
+            <input
+              className="field"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </label>
         ) : null}
         <label className="block space-y-1 text-sm">
@@ -145,7 +181,14 @@ export function AccountForms({
             required
           />
         </label>
-        {error ? <p className="text-sm text-[color:var(--danger)]">{error}</p> : null}
+        {error ? (
+          <p className="text-sm text-[color:var(--danger)]">{error}</p>
+        ) : null}
+        {info ? (
+          <p className="break-all text-sm text-[color:var(--accent-soft)]">
+            {info}
+          </p>
+        ) : null}
         <button className="btn-primary w-full" disabled={busy} type="submit">
           {mode === "login" ? "Sign in" : "Create account"}
         </button>
@@ -154,7 +197,9 @@ export function AccountForms({
         href={googleReady ? "/api/auth/google" : "/api/auth/google?mode=demo"}
         className="btn-ghost flex w-full items-center justify-center"
       >
-        {googleReady ? "Continue with Google" : "Continue with Google (local demo)"}
+        {googleReady
+          ? "Continue with Google"
+          : "Continue with Google (local demo)"}
       </a>
     </div>
   );

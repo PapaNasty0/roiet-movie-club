@@ -27,9 +27,10 @@ export default async function AdminPage() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <h1 className="font-display text-4xl sm:text-5xl">Admin</h1>
         <p className="mt-3 max-w-2xl text-[color:var(--muted)]">
-          Manage movies, gallery photos, skins, and editable site text. Admin is assigned by
-          matching <code className="text-[color:var(--accent-soft)]">ADMIN_EMAIL</code> (default{" "}
-          bjleigh@gmail.com) when an account is created or seeded.
+          Manage movies, gallery photos, skins, and editable site text. Admin is assigned when
+          an account email matches{" "}
+          <code className="text-[color:var(--accent-soft)]">ADMIN_EMAIL</code> (set via env;
+          default bjleigh@gmail.com) on verified signup or Google sign-in.
         </p>
         <div className="mt-10">
           <AdminPanel

@@ -30,7 +30,7 @@ export async function PATCH(request: Request) {
        notify_new_movies = coalesce($1, notify_new_movies),
        name = coalesce($2, name)
      where id = $3
-     returning id, email, name, is_admin, notify_new_movies`,
+     returning id, email, name, is_admin, notify_new_movies, email_verified`,
     [
       parsed.data.notify_new_movies ?? null,
       parsed.data.name ?? null,
