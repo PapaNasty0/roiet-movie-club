@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { getAllContent } from "@/lib/content";
+import { contentLabelFor, getAllContent } from "@/lib/content";
 
 export async function GET() {
   const admin = await requireAdmin();
@@ -36,9 +36,16 @@ export async function PUT(request: Request) {
   for (const item of parsed.data.items) {
     await sql(
       `insert into site_content (key, label, value, updated_at)
-       values ($1, $1, $2, now())
-       on conflict (key) do update set value = excluded.value, updated_at = now()`,
-      [item.key, item.value],
+       values ($1, $2, $3, now())
+       on conflict (key) do update set
+         value = excluded.value,
+         label = case
+           when site_content.label = '' or site_content.label = site_content.key
+             then excluded.label
+           else site_content.label
+         end,
+         updated_at = now()`,
+      [item.key, contentLabelFor(item.key), item.value],
     );
   }
   return NextResponse.json(

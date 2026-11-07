@@ -60,13 +60,21 @@ export default async function AccountPage({
   );
 
   return (
-    <SiteShell brand={content["home.brand"]} skin={skin} user={user}>
+    <SiteShell
+      brand={content["home.brand"]}
+      footerTagline={content["footer.tagline"]}
+      skin={skin}
+      user={user}
+    >
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <AccountForms
           user={user}
           googleReady={googleReady}
           neonAuthReady={neonAuthReady}
           banner={bannerFromParams(sp)}
+          joinTitle={content["account.join_title"]}
+          joinIntro={content["account.join_intro"]}
+          joinIntroPassword={content["account.join_intro_password"]}
         />
       </div>
     </SiteShell>

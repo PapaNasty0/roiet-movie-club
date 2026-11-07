@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EditableText } from "@/components/EditableText";
 import { SiteShell } from "@/components/SiteShell";
 import { RsvpPanel } from "@/components/RsvpPanel";
 import { requireUser } from "@/lib/auth";
@@ -32,9 +33,15 @@ export default async function MovieDetailPage({
     listRsvpAttendees(movie.id),
   ]);
   const myRsvp = user ? await getUserRsvp(movie.id, user.id) : null;
+  const isAdmin = Boolean(user?.is_admin);
 
   return (
-    <SiteShell brand={content["home.brand"]} skin={skin} user={user}>
+    <SiteShell
+      brand={content["home.brand"]}
+      footerTagline={content["footer.tagline"]}
+      skin={skin}
+      user={user}
+    >
       <div className="hero-plane min-h-[52vh]">
         <div
           className="hero-media"
@@ -73,23 +80,45 @@ export default async function MovieDetailPage({
             </div>
           ) : null}
           <section>
-            <h2 className="font-display text-2xl">Synopsis</h2>
+            <EditableText
+              contentKey="movie.synopsis_heading"
+              value={content["movie.synopsis_heading"] || "Synopsis"}
+              isAdmin={isAdmin}
+              as="h2"
+              className="font-display text-2xl"
+            />
             <p className="mt-3 leading-relaxed text-[color:var(--muted)]">{movie.synopsis}</p>
           </section>
           {movie.reviews_summary ? (
             <section>
-              <h2 className="font-display text-2xl">Reviews summary</h2>
+              <EditableText
+                contentKey="movie.reviews_heading"
+                value={content["movie.reviews_heading"] || "Reviews summary"}
+                isAdmin={isAdmin}
+                as="h2"
+                className="font-display text-2xl"
+              />
               <p className="mt-3 leading-relaxed text-[color:var(--muted)]">
                 {movie.reviews_summary}
               </p>
             </section>
           ) : null}
-          <Link
-            href={`/forum/${movie.id}`}
-            className="inline-flex text-[color:var(--accent)] hover:underline"
+          <EditableText
+            contentKey="movie.forum_link"
+            value={content["movie.forum_link"] || "Open this movie’s forum thread →"}
+            isAdmin={isAdmin}
+            as="span"
+            inline
           >
-            Open this movie’s forum thread →
-          </Link>
+            {(text) => (
+              <Link
+                href={`/forum/${movie.id}`}
+                className="inline-flex text-[color:var(--accent)] hover:underline"
+              >
+                {text}
+              </Link>
+            )}
+          </EditableText>
         </div>
         <RsvpPanel
           movieId={movie.id}

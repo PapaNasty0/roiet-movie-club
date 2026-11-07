@@ -11,7 +11,7 @@ Base site for Brian Leigh’s English-language movie meetups at Robinson Roi Et 
 - Per-movie discussion forum
 - Opt-in email notifications for new movies (preference saved; send path stubs until `RESEND_API_KEY` is set)
 - Outing photo gallery
-- Admin: editable site text, movies, gallery, site/movie skins
+- Admin: inline pencil edits for site text (teacherbrian-style), plus movies, gallery, site/movie skins
 - Default “RoiEt Night Out” skin + example “Amber Noir” skin
 
 ## Cinema schedule note
