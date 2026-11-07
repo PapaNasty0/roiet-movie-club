@@ -15,6 +15,29 @@ function googleConfigured() {
   );
 }
 
+function oauthCookies(
+  res: NextResponse,
+  input: { state: string; origin: string; redirectUri: string; link: boolean },
+) {
+  const secure = process.env.NODE_ENV === "production";
+  const base = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure,
+    path: "/",
+    maxAge: 600,
+  };
+  res.cookies.set("rmc_oauth_state", input.state, base);
+  res.cookies.set("rmc_oauth_origin", input.origin, base);
+  // Exact redirect_uri used at authorize time — required for token exchange.
+  res.cookies.set("rmc_oauth_redirect", input.redirectUri, base);
+  if (input.link) {
+    res.cookies.set("rmc_oauth_link", "1", base);
+  } else {
+    res.cookies.delete("rmc_oauth_link");
+  }
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const origin = publicOrigin(request);
@@ -66,30 +89,6 @@ export async function GET(request: Request) {
   auth.searchParams.set("prompt", "select_account");
 
   const res = NextResponse.redirect(auth.toString());
-  res.cookies.set("rmc_oauth_state", state, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 600,
-  });
-  res.cookies.set("rmc_oauth_origin", origin, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 600,
-  });
-  if (link) {
-    res.cookies.set("rmc_oauth_link", "1", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 600,
-    });
-  } else {
-    res.cookies.delete("rmc_oauth_link");
-  }
+  oauthCookies(res, { state, origin, redirectUri, link });
   return res;
 }

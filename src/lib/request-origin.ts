@@ -1,7 +1,7 @@
 /**
  * Public site origin for OAuth redirects and email links.
- * App Hosting / Cloud Run often sets request.url to http://0.0.0.0:8080;
- * prefer forwarded Host headers, then APP_ORIGIN.
+ * App Hosting / Cloud Run often sets request.url to http://0.0.0.0:8080
+ * or the internal *.run.app service URL; never use those for OAuth.
  */
 export function publicOrigin(request: Request, stored?: string | null): string {
   if (stored?.startsWith("http://") || stored?.startsWith("https://")) {
@@ -40,7 +40,8 @@ function isInternalHost(host: string): boolean {
     h.startsWith("127.0.0.1") ||
     h.startsWith("localhost") ||
     h.startsWith("[::]") ||
-    h.startsWith("[::1]")
+    h.startsWith("[::1]") ||
+    h.endsWith(".run.app")
   );
 }
 
