@@ -1,9 +1,20 @@
 /**
  * Email notifications and verification.
  *
- * When RESEND_API_KEY is unset, sends are stubbed (logged). Local/dev
- * registration also returns the verify URL so you can confirm without mail.
+ * When RESEND_API_KEY is unset, sends are stubbed (logged). Production
+ * never returns verifyUrl unless ALLOW_DEV_VERIFY_URL=1. ADMIN_EMAIL can
+ * still finish setup via password bootstrap (see auth.ts) until Resend is
+ * bound; once RESEND_API_KEY is set, new password signups must confirm email.
  */
+
+export function isResendConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY?.trim());
+}
+
+/** Alias used by auth bootstrap helpers. */
+export function resendConfigured(): boolean {
+  return isResendConfigured();
+}
 
 export async function sendVerificationEmail(input: {
   email: string;

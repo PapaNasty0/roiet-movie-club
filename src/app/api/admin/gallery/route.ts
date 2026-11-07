@@ -2,12 +2,24 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import {
+  deleteGalleryObject,
+  isNeonStorageRef,
+  resolveImageUrl,
+  storageKeyFromRef,
+} from "@/lib/storage";
 
 const schema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().max(200).default(""),
   caption: z.string().max(500).default(""),
-  image_url: z.string().url().max(1000),
+  image_url: z
+    .string()
+    .max(1000)
+    .refine(
+      (v) => isNeonStorageRef(v) || /^https?:\/\//i.test(v),
+      "image_url must be https or a neon:assets/ ref",
+    ),
   outing_date: z.string().nullable().optional(),
   sort_order: z.number().int().default(0),
 });
@@ -17,10 +29,19 @@ export async function GET() {
   if (!admin) {
     return NextResponse.json({ error: "Admin only" }, { status: 403 });
   }
-  const photos = await sql(
+  const photos = await sql<Record<string, unknown>>(
     `select * from gallery_photos order by sort_order, outing_date desc nulls last`,
   );
-  return NextResponse.json({ photos }, { headers: { "cache-control": "private, no-store" } });
+  const resolved = await Promise.all(
+    photos.map(async (p) => ({
+      ...p,
+      image_url: await resolveImageUrl(String(p.image_url ?? "")),
+    })),
+  );
+  return NextResponse.json(
+    { photos: resolved },
+    { headers: { "cache-control": "private, no-store" } },
+  );
 }
 
 export async function POST(request: Request) {
@@ -53,6 +74,14 @@ export async function DELETE(request: Request) {
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
+  const existing = await sql<{ image_url: string }>(
+    `select image_url from gallery_photos where id = $1`,
+    [id],
+  );
   await sql(`delete from gallery_photos where id = $1`, [id]);
+  const key = storageKeyFromRef(existing[0]?.image_url ?? "");
+  if (key) {
+    await deleteGalleryObject(key).catch(() => undefined);
+  }
   return NextResponse.json({ ok: true }, { headers: { "cache-control": "private, no-store" } });
 }

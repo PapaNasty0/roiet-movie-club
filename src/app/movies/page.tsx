@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EditableText } from "@/components/EditableText";
 import { SiteShell } from "@/components/SiteShell";
 import { requireUser } from "@/lib/auth";
 import { getContentMap } from "@/lib/content";
@@ -14,18 +15,40 @@ export default async function MoviesPage() {
     listUpcomingMovies(),
     requireUser(),
   ]);
+  const isAdmin = Boolean(user?.is_admin);
 
   return (
-    <SiteShell brand={content["home.brand"]} skin={skin} user={user}>
+    <SiteShell
+      brand={content["home.brand"]}
+      footerTagline={content["footer.tagline"]}
+      skin={skin}
+      user={user}
+    >
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <h1 className="font-display text-4xl sm:text-5xl">Upcoming English movies</h1>
-        <p className="mt-3 max-w-2xl text-[color:var(--muted)]">
-          Admin-managed listings for Robinson Roi Et / Major Cineplex. Cinema scraping is not
-          wired in v1 — titles are entered by Brian.
-        </p>
+        <EditableText
+          contentKey="movies.title"
+          value={content["movies.title"] || "Upcoming English movies"}
+          isAdmin={isAdmin}
+          as="h1"
+          className="font-display text-4xl sm:text-5xl"
+        />
+        <EditableText
+          contentKey="movies.intro"
+          value={content["movies.intro"] || ""}
+          isAdmin={isAdmin}
+          as="p"
+          className="mt-3 max-w-2xl text-[color:var(--muted)]"
+          multiline
+        />
         <div className="mt-10 space-y-8">
           {movies.length === 0 ? (
-            <p className="text-[color:var(--muted)]">No published movies yet.</p>
+            <EditableText
+              contentKey="movies.empty"
+              value={content["movies.empty"] || "No published movies yet."}
+              isAdmin={isAdmin}
+              as="p"
+              className="text-[color:var(--muted)]"
+            />
           ) : (
             movies.map((m, i) => (
               <article
@@ -53,12 +76,14 @@ export default async function MoviesPage() {
                     {m.rating || "Unrated"} · {m.genre}
                   </p>
                   <p className="mt-4 max-w-2xl text-[color:var(--muted)]">{m.synopsis}</p>
-                  <Link
+                  <EditableText
+                    contentKey="movies.detail_cta"
+                    value={content["movies.detail_cta"] || "Details, trailer & RSVP →"}
+                    isAdmin={isAdmin}
                     href={`/movies/${m.id}`}
-                    className="mt-5 inline-flex text-[color:var(--accent)] hover:underline"
-                  >
-                    Details, trailer & RSVP →
-                  </Link>
+                    linkClassName="mt-5 inline-flex text-[color:var(--accent)] hover:underline"
+                    inline
+                  />
                 </div>
               </article>
             ))

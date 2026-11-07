@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EditableText } from "@/components/EditableText";
 import { ForumComposer } from "@/components/ForumComposer";
 import { SiteShell } from "@/components/SiteShell";
+import { UserAvatar } from "@/components/UserAvatar";
 import { requireUser } from "@/lib/auth";
 import { getContentMap } from "@/lib/content";
 import { getActiveSkin, getMovie, listForumPosts } from "@/lib/data";
@@ -23,16 +25,29 @@ export default async function ForumThreadPage({
     listForumPosts(movieId),
     requireUser(),
   ]);
+  const isAdmin = Boolean(user?.is_admin);
 
   return (
-    <SiteShell brand={content["home.brand"]} skin={skin} user={user}>
+    <SiteShell
+      brand={content["home.brand"]}
+      footerTagline={content["footer.tagline"]}
+      skin={skin}
+      user={user}
+    >
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <Link href="/forum" className="text-sm text-[color:var(--muted)] hover:text-[color:var(--accent)]">
           ← All threads
         </Link>
         <h1 className="font-display mt-4 text-4xl">{movie.title}</h1>
         <p className="mt-2 text-[color:var(--muted)]">
-          Attendance chat and questions ·{" "}
+          <EditableText
+            contentKey="forum.thread_blurb"
+            value={content["forum.thread_blurb"] || "Attendance chat and questions"}
+            isAdmin={isAdmin}
+            as="span"
+            inline
+          />{" "}
+          ·{" "}
           <Link href={`/movies/${movie.id}`} className="text-[color:var(--accent)] hover:underline">
             movie page
           </Link>
@@ -44,8 +59,17 @@ export default async function ForumThreadPage({
           ) : (
             posts.map((p) => (
               <article key={p.id} className="border-t border-[color:var(--line)] pt-5">
-                <header className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-                  <span className="text-[color:var(--accent-soft)]">{p.author_name}</span>
+                <header className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      name={p.author_name}
+                      src={p.author_avatar || null}
+                      size="sm"
+                    />
+                    <span className="text-[color:var(--accent-soft)]">
+                      {p.author_name}
+                    </span>
+                  </div>
                   <time className="text-[color:var(--muted)]">
                     {new Date(p.created_at).toLocaleString("en-GB", {
                       day: "numeric",

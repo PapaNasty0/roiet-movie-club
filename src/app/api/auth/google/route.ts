@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
-import { createUser, findUserByEmail, upsertGoogleUser } from "@/lib/auth";
+import {
+  createUser,
+  findUserByEmail,
+  requireUser,
+  upsertGoogleUser,
+} from "@/lib/auth";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
+import { publicOrigin } from "@/lib/request-origin";
 
 function googleConfigured() {
   return Boolean(
@@ -9,18 +15,46 @@ function googleConfigured() {
   );
 }
 
-function appOrigin(request: Request) {
-  const env = process.env.APP_ORIGIN?.trim();
-  if (env) return env.replace(/\/$/, "");
-  return new URL(request.url).origin;
+function oauthCookies(
+  res: NextResponse,
+  input: { state: string; origin: string; redirectUri: string; link: boolean },
+) {
+  const secure = process.env.NODE_ENV === "production";
+  const base = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure,
+    path: "/",
+    maxAge: 600,
+  };
+  res.cookies.set("rmc_oauth_state", input.state, base);
+  res.cookies.set("rmc_oauth_origin", input.origin, base);
+  // Exact redirect_uri used at authorize time — required for token exchange.
+  res.cookies.set("rmc_oauth_redirect", input.redirectUri, base);
+  if (input.link) {
+    res.cookies.set("rmc_oauth_link", "1", base);
+  } else {
+    res.cookies.delete("rmc_oauth_link");
+  }
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const origin = appOrigin(request);
+  const origin = publicOrigin(request);
+  const link = url.searchParams.get("link") === "1";
+
+  if (link) {
+    const sessionUser = await requireUser();
+    if (!sessionUser) {
+      return NextResponse.redirect(`${origin}/account?google=signin`);
+    }
+  }
 
   if (!googleConfigured()) {
-    // Local / unpublished fallback: demo Google sign-in
+    // Local-only demo Google — never available in production.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.redirect(`${origin}/account?google=missing`);
+    }
     const mode = url.searchParams.get("mode") || "demo";
     if (mode !== "demo") {
       return NextResponse.redirect(`${origin}/account?google=missing`);
@@ -55,12 +89,6 @@ export async function GET(request: Request) {
   auth.searchParams.set("prompt", "select_account");
 
   const res = NextResponse.redirect(auth.toString());
-  res.cookies.set("rmc_oauth_state", state, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 600,
-  });
+  oauthCookies(res, { state, origin, redirectUri, link });
   return res;
 }

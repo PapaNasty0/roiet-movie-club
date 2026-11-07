@@ -1,0 +1,73 @@
+# Firebase App Hosting — RoiEt English Movie Club
+# Project: movieclub101-da5f1 (display name movieclub101) | Domain: movieclub101.com
+# https://firebase.google.com/docs/app-hosting/configure
+#
+# Cost posture (Brian / THB-sensitive):
+# - minInstances: 0 → scale to zero when idle (no always-on Cloud Run charge)
+# - low maxInstances / 512MiB → cap runaway scale
+# - Prefer free-tier Postgres (Neon) over Cloud SQL
+# - Budget alert: movieclub101-low-cap-100THB (alerts only; does not hard-stop spend)
+#
+# Secrets (create before first rollout):
+#   SESSION_SECRET, DATABASE_URL, DATABASE_URL_UNPOOLED, ADMIN_EMAIL
+# Google OAuth (set):
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+# Still optional until Brian creates them:
+#   RESEND_API_KEY, EMAIL_FROM
+# Guides: project docs/google-signin-setup.md, docs/email-confirmation-setup.md
+
+runConfig:
+  runtime: nodejs22
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: APP_ORIGIN
+    value: https://movieclub101.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NODE_ENV
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: SESSION_SECRET
+    secret: SESSION_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: DATABASE_URL_UNPOOLED
+    secret: DATABASE_URL_UNPOOLED
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: ADMIN_EMAIL
+    secret: ADMIN_EMAIL
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: GOOGLE_CLIENT_ID
+    secret: GOOGLE_CLIENT_ID
+    availability:
+      - RUNTIME
+
+  - variable: GOOGLE_CLIENT_SECRET
+    secret: GOOGLE_CLIENT_SECRET
+    availability:
+      - RUNTIME
+
+  # RESEND_API_KEY / EMAIL_FROM omitted until Brian creates those secrets.

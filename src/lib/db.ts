@@ -41,7 +41,14 @@ export async function queryRaw<T = Record<string, unknown>>(
   params: unknown[] = [],
 ): Promise<T[]> {
   if (databaseUrl !== "") {
-    g.__rmcDb!.pool ??= new pg.Pool({ connectionString: databaseUrl, max: 5 });
+    // Neon pooled URL (Firebase App Hosting / Cloud Run Node runtime).
+    g.__rmcDb!.pool ??= new pg.Pool({
+      connectionString: databaseUrl,
+      max: 5,
+      ssl: databaseUrl.includes("sslmode=require")
+        ? { rejectUnauthorized: false }
+        : undefined,
+    });
     return (await g.__rmcDb!.pool.query(text, params)).rows as T[];
   }
   const db = await getLocal();

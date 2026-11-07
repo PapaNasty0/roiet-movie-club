@@ -23,12 +23,18 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <SiteShell brand={contentMap["home.brand"]} skin={skin} user={admin}>
+    <SiteShell
+      brand={contentMap["home.brand"]}
+      footerTagline={contentMap["footer.tagline"]}
+      skin={skin}
+      user={admin}
+    >
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <h1 className="font-display text-4xl sm:text-5xl">Admin</h1>
         <p className="mt-3 max-w-2xl text-[color:var(--muted)]">
-          Manage movies, gallery photos, skins, and editable site text. Admin is assigned when
-          an account email matches{" "}
+          Manage movies, gallery photos, skins, and editable site text. On any public page,
+          hover a pencil icon to edit that block in place (same text keys as below). Admin is
+          assigned when an account email matches{" "}
           <code className="text-[color:var(--accent-soft)]">ADMIN_EMAIL</code> (set via env;
           default bjleigh@gmail.com) on verified signup or Google sign-in.
         </p>

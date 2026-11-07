@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import {
+  findUserById,
+  requireUser,
+  updateDisplayName,
+} from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { z } from "zod";
 
 export async function GET() {
   const user = await requireUser();
   if (!user) {
-    return NextResponse.json({ user: null }, { headers: { "cache-control": "private, no-store" } });
+    return NextResponse.json(
+      { user: null },
+      { headers: { "cache-control": "private, no-store" } },
+    );
   }
-  return NextResponse.json({ user }, { headers: { "cache-control": "private, no-store" } });
+  return NextResponse.json(
+    { user },
+    { headers: { "cache-control": "private, no-store" } },
+  );
 }
 
 const patchSchema = z.object({
@@ -25,20 +35,41 @@ export async function PATCH(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid update" }, { status: 400 });
   }
-  const rows = await sql(
-    `update users set
-       notify_new_movies = coalesce($1, notify_new_movies),
-       name = coalesce($2, name)
-     where id = $3
-     returning id, email, name, is_admin, notify_new_movies, email_verified`,
-    [
-      parsed.data.notify_new_movies ?? null,
-      parsed.data.name ?? null,
+  if (
+    parsed.data.notify_new_movies === undefined &&
+    parsed.data.name === undefined
+  ) {
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+  }
+
+  if (parsed.data.name !== undefined) {
+    const updated = await updateDisplayName(user.id, parsed.data.name);
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Display name cannot be empty" },
+        { status: 400 },
+      );
+    }
+  }
+
+  if (parsed.data.notify_new_movies !== undefined) {
+    await sql(`update users set notify_new_movies = $1 where id = $2`, [
+      parsed.data.notify_new_movies,
       user.id,
-    ],
-  );
+    ]);
+  }
+
+  const next = await findUserById(user.id);
+  if (!next) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  // Re-fetch via requireUser path is awkward; resolve avatar like requireUser.
+  const { resolveImageUrl } = await import("@/lib/storage");
+  const avatar_url = next.avatar_url
+    ? await resolveImageUrl(next.avatar_url)
+    : "";
   return NextResponse.json(
-    { user: rows[0] },
+    { user: { ...next, avatar_url } },
     { headers: { "cache-control": "private, no-store" } },
   );
 }

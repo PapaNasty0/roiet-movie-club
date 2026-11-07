@@ -7,6 +7,12 @@ export type User = {
   is_admin: boolean;
   notify_new_movies: boolean;
   email_verified: boolean;
+  /** Profile photo: Neon storage ref, data URL, or https URL (empty = none). */
+  avatar_url: string;
+  /** True when a password hash is stored (email/password sign-in). */
+  has_password: boolean;
+  /** True when a real Google OAuth id is linked (not Neon Auth placeholders). */
+  has_google: boolean;
 };
 
 export type Skin = {
@@ -52,6 +58,14 @@ export type RsvpAggregate = {
   parties: number;
 };
 
+export type RsvpAttendee = {
+  user_id: string;
+  display_name: string;
+  status: RsvpStatus;
+  adults: number;
+  children: number;
+};
+
 export type ForumPost = {
   id: string;
   movie_id: string;
@@ -59,6 +73,7 @@ export type ForumPost = {
   body: string;
   created_at: string;
   author_name: string;
+  author_avatar: string;
 };
 
 export type GalleryPhoto = {

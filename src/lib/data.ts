@@ -6,6 +6,7 @@ import type {
   Movie,
   Rsvp,
   RsvpAggregate,
+  RsvpAttendee,
   Skin,
   User,
 } from "./types";
@@ -75,6 +76,29 @@ export async function getRsvpAggregates(movieId: string): Promise<RsvpAggregate[
   );
 }
 
+export async function listRsvpAttendees(
+  movieId: string,
+): Promise<RsvpAttendee[]> {
+  return sql<RsvpAttendee>(
+    `select r.user_id,
+            coalesce(nullif(trim(u.name), ''), split_part(u.email, '@', 1)) as display_name,
+            r.status,
+            r.adults,
+            r.children
+     from rsvps r
+     join users u on u.id = r.user_id
+     where r.movie_id = $1
+     order by
+       case r.status
+         when 'booked' then 0
+         when 'probably_go' then 1
+         else 2
+       end,
+       display_name`,
+    [movieId],
+  );
+}
+
 export async function getUserRsvp(
   movieId: string,
   userId: string,
@@ -102,19 +126,37 @@ export async function listForumMovies(): Promise<
 }
 
 export async function listForumPosts(movieId: string): Promise<ForumPost[]> {
-  return sql<ForumPost>(
-    `select p.id, p.movie_id, p.user_id, p.body, p.created_at, u.name as author_name
+  const posts = await sql<ForumPost>(
+    `select p.id, p.movie_id, p.user_id, p.body, p.created_at,
+            u.name as author_name,
+            coalesce(u.avatar_url, '') as author_avatar
      from forum_posts p
      join users u on u.id = p.user_id
      where p.movie_id = $1
      order by p.created_at asc`,
     [movieId],
   );
+  const { resolveImageUrl } = await import("./storage");
+  return Promise.all(
+    posts.map(async (p) => ({
+      ...p,
+      author_avatar: p.author_avatar
+        ? await resolveImageUrl(p.author_avatar)
+        : "",
+    })),
+  );
 }
 
 export async function listGallery(): Promise<GalleryPhoto[]> {
-  return sql<GalleryPhoto>(
+  const rows = await sql<GalleryPhoto>(
     `select * from gallery_photos order by sort_order, outing_date desc nulls last`,
+  );
+  const { resolveImageUrl } = await import("./storage");
+  return Promise.all(
+    rows.map(async (p) => ({
+      ...p,
+      image_url: await resolveImageUrl(p.image_url),
+    })),
   );
 }
 

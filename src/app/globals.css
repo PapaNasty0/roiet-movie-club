@@ -178,3 +178,64 @@ body {
     padding-bottom: 4.5rem;
   }
 }
+
+/* teacherbrian-style inline admin edit affordance */
+.editable {
+  position: relative;
+  display: block;
+}
+
+.editable.editable-inline {
+  display: inline;
+}
+
+.pencil {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg-mid) 88%, var(--ink));
+  color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.editable.is-admin .pencil {
+  pointer-events: auto;
+  opacity: 0.35;
+}
+
+.editable.is-admin:hover .pencil,
+.editable.is-admin:focus-within .pencil,
+.pencil:focus {
+  opacity: 1;
+}
+
+.editable-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(3, 10, 14, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.editable-sheet {
+  width: min(100%, 28rem);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--bg-mid) 92%, #000);
+  padding: 1.25rem;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
