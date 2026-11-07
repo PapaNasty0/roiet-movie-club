@@ -60,8 +60,16 @@ export async function PATCH(request: Request) {
   }
 
   const next = await findUserById(user.id);
+  if (!next) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  // Re-fetch via requireUser path is awkward; resolve avatar like requireUser.
+  const { resolveImageUrl } = await import("@/lib/storage");
+  const avatar_url = next.avatar_url
+    ? await resolveImageUrl(next.avatar_url)
+    : "";
   return NextResponse.json(
-    { user: next },
+    { user: { ...next, avatar_url } },
     { headers: { "cache-control": "private, no-store" } },
   );
 }

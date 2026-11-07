@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ForumComposer } from "@/components/ForumComposer";
 import { SiteShell } from "@/components/SiteShell";
+import { UserAvatar } from "@/components/UserAvatar";
 import { requireUser } from "@/lib/auth";
 import { getContentMap } from "@/lib/content";
 import { getActiveSkin, getMovie, listForumPosts } from "@/lib/data";
@@ -44,8 +45,17 @@ export default async function ForumThreadPage({
           ) : (
             posts.map((p) => (
               <article key={p.id} className="border-t border-[color:var(--line)] pt-5">
-                <header className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-                  <span className="text-[color:var(--accent-soft)]">{p.author_name}</span>
+                <header className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      name={p.author_name}
+                      src={p.author_avatar || null}
+                      size="sm"
+                    />
+                    <span className="text-[color:var(--accent-soft)]">
+                      {p.author_name}
+                    </span>
+                  </div>
                   <time className="text-[color:var(--muted)]">
                     {new Date(p.created_at).toLocaleString("en-GB", {
                       day: "numeric",
