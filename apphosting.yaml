@@ -5,16 +5,11 @@
 # Cost posture (Brian / THB-sensitive):
 # - minInstances: 0 → scale to zero when idle (no always-on Cloud Run charge)
 # - low maxInstances / 512MiB → cap runaway scale
-# - Prefer free-tier Postgres (Neon/Supabase free) over Cloud SQL
-# - Budget alert on billing account: movieclub101-low-cap-100THB (alerts only; does not hard-stop spend)
+# - Prefer free-tier Postgres (Neon) over Cloud SQL
+# - Budget alert: movieclub101-low-cap-100THB (alerts only; does not hard-stop spend)
 #
-# Create referenced secrets before the first rollout:
-#   npx firebase-tools@latest apphosting:secrets:set SESSION_SECRET
-#   npx firebase-tools@latest apphosting:secrets:set DATABASE_URL
-#   npx firebase-tools@latest apphosting:secrets:set ADMIN_EMAIL
-# Optional secrets (add env entries below after creating them):
-#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY, EMAIL_FROM,
-#   DATABASE_URL_UNPOOLED
+# Secrets (create before first rollout):
+#   SESSION_SECRET, DATABASE_URL, DATABASE_URL_UNPOOLED, ADMIN_EMAIL
 
 runConfig:
   runtime: nodejs22
@@ -59,5 +54,3 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: DATABASE_URL_UNPOOLED
-    secret: DATABASE_URL_UNPOOLED
