@@ -59,16 +59,50 @@ export async function uploadGalleryObject(input: {
 }): Promise<{ key: string; ref: string }> {
   const ext = guessExt(input.contentType, input.filename);
   const key = `gallery/${new Date().toISOString().slice(0, 10)}/${randomUUID()}${ext}`;
+  await putObject(key, input.body, input.contentType);
+  return { key, ref: storageRefFromKey(key) };
+}
+
+export async function uploadAvatarObject(input: {
+  userId: string;
+  body: Buffer;
+  contentType: string;
+  filename?: string;
+}): Promise<{ key: string; ref: string }> {
+  const ext = guessExt(input.contentType, input.filename);
+  const key = `avatars/${input.userId}/${randomUUID()}${ext}`;
+  await putObject(key, input.body, input.contentType);
+  return { key, ref: storageRefFromKey(key) };
+}
+
+async function putObject(
+  key: string,
+  body: Buffer,
+  contentType: string,
+): Promise<void> {
   await getClient().send(
     new PutObjectCommand({
       Bucket: GALLERY_BUCKET,
       Key: key,
-      Body: input.body,
-      ContentType: input.contentType,
+      Body: body,
+      ContentType: contentType,
       CacheControl: "private, max-age=3600",
     }),
   );
-  return { key, ref: storageRefFromKey(key) };
+}
+
+/** Fallback when Object Storage env is missing (still works on App Hosting). */
+export function dataUrlFromUpload(input: {
+  body: Buffer;
+  contentType: string;
+}): string {
+  return `data:${input.contentType};base64,${input.body.toString("base64")}`;
+}
+
+export async function deleteStoredImage(refOrUrl: string): Promise<void> {
+  const key = storageKeyFromRef(refOrUrl);
+  if (!key || !storageConfigured()) return;
+  await deleteGalleryObject(key);
 }
 
 export async function presignGalleryObject(

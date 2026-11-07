@@ -126,13 +126,24 @@ export async function listForumMovies(): Promise<
 }
 
 export async function listForumPosts(movieId: string): Promise<ForumPost[]> {
-  return sql<ForumPost>(
-    `select p.id, p.movie_id, p.user_id, p.body, p.created_at, u.name as author_name
+  const posts = await sql<ForumPost>(
+    `select p.id, p.movie_id, p.user_id, p.body, p.created_at,
+            u.name as author_name,
+            coalesce(u.avatar_url, '') as author_avatar
      from forum_posts p
      join users u on u.id = p.user_id
      where p.movie_id = $1
      order by p.created_at asc`,
     [movieId],
+  );
+  const { resolveImageUrl } = await import("./storage");
+  return Promise.all(
+    posts.map(async (p) => ({
+      ...p,
+      author_avatar: p.author_avatar
+        ? await resolveImageUrl(p.author_avatar)
+        : "",
+    })),
   );
 }
 

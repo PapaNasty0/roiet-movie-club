@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
+import { UserAvatar } from "@/components/UserAvatar";
 import type { User } from "@/lib/types";
 import type { Skin } from "@/lib/types";
 
@@ -7,7 +8,6 @@ const links = [
   { href: "/movies", label: "Movies" },
   { href: "/forum", label: "Forum" },
   { href: "/gallery", label: "Gallery" },
-  { href: "/account", label: "Account" },
 ];
 
 export function SiteShell({
@@ -46,6 +46,20 @@ export function SiteShell({
                 Admin
               </Link>
             ) : null}
+            <Link
+              href="/account"
+              className="inline-flex items-center gap-2 transition hover:text-[color:var(--accent-soft)]"
+            >
+              <span>Account</span>
+              {user ? (
+                <UserAvatar
+                  name={user.name}
+                  email={user.email}
+                  src={user.avatar_url || null}
+                  size="sm"
+                />
+              ) : null}
+            </Link>
           </nav>
         </div>
       </header>

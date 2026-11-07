@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { UserAvatar } from "@/components/UserAvatar";
 import type { User } from "@/lib/types";
 import { neonAuthClient } from "@/lib/neon-auth-client";
 
@@ -17,16 +18,19 @@ export function AccountForms({
   banner?: string | null;
 }) {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState(user?.name ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url ?? "");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState(banner || "");
   const [nameMessage, setNameMessage] = useState("");
+  const [avatarMessage, setAvatarMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [notify, setNotify] = useState(user?.notify_new_movies ?? false);
   const [busy, setBusy] = useState(false);
@@ -144,6 +148,45 @@ export function AccountForms({
     router.refresh();
   }
 
+  async function uploadAvatar(file: File | null) {
+    if (!file) return;
+    setBusy(true);
+    setAvatarMessage("");
+    setError("");
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/auth/avatar", {
+      method: "POST",
+      body: form,
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (fileRef.current) fileRef.current.value = "";
+    if (!res.ok) {
+      setError(data.error || "Could not save photo");
+      return;
+    }
+    setAvatarUrl(data.user?.avatar_url || "");
+    setAvatarMessage("Photo saved. It shows in the menu and on forum posts.");
+    router.refresh();
+  }
+
+  async function removeAvatar() {
+    setBusy(true);
+    setAvatarMessage("");
+    setError("");
+    const res = await fetch("/api/auth/avatar", { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setError(data.error || "Could not remove photo");
+      return;
+    }
+    setAvatarUrl("");
+    setAvatarMessage("Photo removed.");
+    router.refresh();
+  }
+
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -195,6 +238,52 @@ export function AccountForms({
             <p className="mt-3 text-sm text-[color:var(--accent-soft)]">{info}</p>
           ) : null}
         </div>
+
+        <section className="space-y-4">
+          <h2 className="font-display text-2xl">Profile photo</h2>
+          <p className="text-sm text-[color:var(--muted)]">
+            Pick a photo of yourself. It shows next to Account in the menu and
+            on your forum posts.
+          </p>
+          <div className="flex flex-wrap items-center gap-4">
+            <UserAvatar
+              name={displayName || user.name}
+              email={user.email}
+              src={avatarUrl || null}
+              size="lg"
+            />
+            <div className="flex flex-wrap gap-3">
+              <label className="btn-primary cursor-pointer">
+                {avatarUrl ? "Change photo" : "Upload photo"}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  disabled={busy}
+                  onChange={(e) =>
+                    void uploadAvatar(e.target.files?.[0] ?? null)
+                  }
+                />
+              </label>
+              {avatarUrl ? (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={busy}
+                  onClick={() => void removeAvatar()}
+                >
+                  Remove photo
+                </button>
+              ) : null}
+            </div>
+          </div>
+          {avatarMessage ? (
+            <p className="text-sm text-[color:var(--accent-soft)]">
+              {avatarMessage}
+            </p>
+          ) : null}
+        </section>
 
         <form onSubmit={saveDisplayName} className="space-y-3">
           <h2 className="font-display text-2xl">Display name</h2>

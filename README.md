@@ -5,7 +5,7 @@ Base site for Brian Leigh’s English-language movie meetups at Robinson Roi Et 
 ## Features (v1)
 
 - Email + password auth (email confirmation when Resend is configured; `ADMIN_EMAIL` password bootstrap only while Resend is unset), plus Google OAuth when secrets are set
-- Account settings: change display name (shown on forum + RSVP lists); link Google and/or add a password on the same email (one account per person)
+- Account settings: profile photo (nav + forum), change display name (forum + RSVP lists); link Google and/or add a password on the same email (one account per person)
 - Upcoming movies (admin-managed): trailer, synopsis, genre, times, length, rating, reviews summary
 - Logged-in RSVP: might go / will probably go / booked tickets + adult & child counts, with aggregates
 - Per-movie discussion forum
@@ -50,6 +50,7 @@ No passwords are shipped in source. Become admin by registering or using Google 
 | `EMAIL_FROM` | Optional — From address for Resend |
 | `APP_ORIGIN` | Canonical origin — set to `https://movieclub101.com` in production (`apphosting.yaml`) |
 | `DATABASE_URL_UNPOOLED` | Optional — non-pooled URL for migrations (Neon-style) |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_ENDPOINT_URL_S3` / `AWS_REGION` | Optional — Neon Object Storage for gallery + avatar uploads (falls back to small data URLs if unset) |
 
 Google OAuth authorized redirect URIs (both required):
 

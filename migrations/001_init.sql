@@ -7,6 +7,7 @@ create table if not exists users (
   is_admin boolean not null default false,
   notify_new_movies boolean not null default false,
   email_verified boolean not null default false,
+  avatar_url text not null default '',
   created_at timestamptz not null default now()
 );
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { listForumPosts } from "@/lib/data";
 import { sql } from "@/lib/db";
 
 export async function GET(
@@ -8,14 +9,7 @@ export async function GET(
   context: { params: Promise<{ movieId: string }> },
 ) {
   const { movieId } = await context.params;
-  const posts = await sql(
-    `select p.id, p.movie_id, p.user_id, p.body, p.created_at, u.name as author_name
-     from forum_posts p
-     join users u on u.id = p.user_id
-     where p.movie_id = $1
-     order by p.created_at asc`,
-    [movieId],
-  );
+  const posts = await listForumPosts(movieId);
   return NextResponse.json({ posts });
 }
 
@@ -47,7 +41,13 @@ export async function POST(
     [movieId, user.id, parsed.data.body],
   );
   return NextResponse.json(
-    { post: { ...rows[0], author_name: user.name } },
+    {
+      post: {
+        ...rows[0],
+        author_name: user.name,
+        author_avatar: user.avatar_url || "",
+      },
+    },
     { status: 201, headers: { "cache-control": "private, no-store" } },
   );
 }

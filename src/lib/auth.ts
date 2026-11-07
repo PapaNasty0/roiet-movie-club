@@ -35,14 +35,25 @@ function mapUser(row: Record<string, unknown>): User {
     is_admin: Boolean(row.is_admin),
     notify_new_movies: Boolean(row.notify_new_movies),
     email_verified: Boolean(row.email_verified),
+    avatar_url: String(row.avatar_url ?? ""),
     has_password: hasPassword,
     has_google: hasGoogle,
   };
 }
 
 const USER_COLS = `id, email, name, is_admin, notify_new_movies, email_verified,
+  coalesce(avatar_url, '') as avatar_url,
   (password_hash is not null) as has_password,
   (google_id is not null and google_id not like 'neon:%') as has_google`;
+
+async function withResolvedAvatar(user: User): Promise<User> {
+  if (!user.avatar_url) return user;
+  const { resolveImageUrl } = await import("./storage");
+  return {
+    ...user,
+    avatar_url: await resolveImageUrl(user.avatar_url),
+  };
+}
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -143,6 +154,26 @@ export async function updateDisplayName(
     [trimmed.slice(0, 80), userId],
   );
   return rows[0] ? mapUser(rows[0]) : null;
+}
+
+export async function updateAvatarUrl(
+  userId: string,
+  avatarUrl: string,
+): Promise<User | null> {
+  const rows = await sql<Record<string, unknown>>(
+    `update users set avatar_url = $1 where id = $2 returning ${USER_COLS}`,
+    [avatarUrl, userId],
+  );
+  return rows[0] ? mapUser(rows[0]) : null;
+}
+
+/** Raw avatar_url from DB (storage ref / data URL) — for replace/delete. */
+export async function getStoredAvatarUrl(userId: string): Promise<string> {
+  const rows = await sql<{ avatar_url: string }>(
+    `select coalesce(avatar_url, '') as avatar_url from users where id = $1`,
+    [userId],
+  );
+  return rows[0]?.avatar_url ?? "";
 }
 
 export async function setUserPassword(
@@ -323,7 +354,7 @@ export async function requireUser(): Promise<User | null> {
   if (!session) return null;
   const user = await findUserById(session.sub);
   if (!user?.email_verified) return null;
-  return user;
+  return withResolvedAvatar(user);
 }
 
 export async function requireAdmin(): Promise<User | null> {
