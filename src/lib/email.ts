@@ -1,9 +1,14 @@
 /**
  * Email notifications and verification.
  *
- * When RESEND_API_KEY is unset, sends are stubbed (logged). Local/dev
- * registration also returns the verify URL so you can confirm without mail.
+ * When RESEND_API_KEY is unset, sends are stubbed (logged) and password
+ * signups are auto-verified (see register route) so production works
+ * before a mailer is configured.
  */
+
+export function isResendConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY?.trim());
+}
 
 export async function sendVerificationEmail(input: {
   email: string;

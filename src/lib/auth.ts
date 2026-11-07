@@ -71,21 +71,23 @@ export async function createUser(input: {
   return mapUser(rows[0]);
 }
 
-/** Refresh credentials on an unverified password signup and keep it unverified. */
+/** Refresh credentials on an unverified password signup. */
 export async function resetUnverifiedPasswordUser(input: {
   userId: string;
   password: string;
   name: string;
+  emailVerified?: boolean;
 }): Promise<User> {
   const hash = await bcrypt.hash(input.password, 10);
+  const verified = input.emailVerified ?? false;
   const rows = await sql<Record<string, unknown>>(
     `update users
      set password_hash = $1,
          name = $2,
-         email_verified = false
-     where id = $3
+         email_verified = $3
+     where id = $4
      returning ${USER_COLS}`,
-    [hash, input.name.trim(), input.userId],
+    [hash, input.name.trim(), verified, input.userId],
   );
   return mapUser(rows[0]);
 }

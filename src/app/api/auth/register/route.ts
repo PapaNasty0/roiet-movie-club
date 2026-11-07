@@ -6,6 +6,8 @@ import {
   resetUnverifiedPasswordUser,
   startEmailVerification,
 } from "@/lib/auth";
+import { isResendConfigured } from "@/lib/email";
+import { createSessionToken, setSessionCookie } from "@/lib/session";
 
 const schema = z.object({
   email: z.string().email(),
@@ -37,16 +39,34 @@ export async function POST(request: Request) {
     );
   }
 
+  // Without Resend, confirmation emails never arrive — auto-verify so
+  // signups (including ADMIN_EMAIL) can sign in immediately.
+  const autoVerify = !isResendConfigured();
+
   const user = existing
     ? await resetUnverifiedPasswordUser({
         userId: existing.id,
         password: parsed.data.password,
         name: parsed.data.name,
+        emailVerified: autoVerify,
       })
     : await createUser({
         ...parsed.data,
-        emailVerified: false,
+        emailVerified: autoVerify,
       });
+
+  if (autoVerify) {
+    const token = await createSessionToken(user);
+    await setSessionCookie(token);
+    return NextResponse.json(
+      {
+        user,
+        autoVerified: true,
+        message: "Account created. You are signed in.",
+      },
+      { headers: { "cache-control": "private, no-store" } },
+    );
+  }
 
   const mail = await startEmailVerification({
     user,

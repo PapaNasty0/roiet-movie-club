@@ -4,7 +4,7 @@ Base site for Brian Leigh’s English-language movie meetups at Robinson Roi Et 
 
 ## Features (v1)
 
-- Email + password auth with email confirmation, plus Google OAuth (demo Google login when OAuth secrets are unset)
+- Email + password auth (email confirmation when Resend is configured; auto-verify when it isn’t), plus Google OAuth when secrets are set
 - Upcoming movies (admin-managed): trailer, synopsis, genre, times, length, rating, reviews summary
 - Logged-in RSVP: might go / will probably go / booked tickets + adult & child counts, with aggregates
 - Per-movie discussion forum
@@ -28,13 +28,13 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Without `DATABASE_URL`, the
 
 ### First admin
 
-No passwords are shipped in source. Become admin by registering or using Google with an email that matches `ADMIN_EMAIL` (default `bjleigh@gmail.com`), then confirming email for password signups. When Resend is unset locally, the register API returns a `verifyUrl` you can open to confirm.
+No passwords are shipped in source. Become admin by registering or using Google with an email that matches `ADMIN_EMAIL` (default `bjleigh@gmail.com`). When `RESEND_API_KEY` is unset, password signups are auto-verified and signed in immediately (including the admin email). When Resend is configured, password signups must confirm email before signing in.
 
 ## How admin is assigned
 
 1. Any new account whose email matches `ADMIN_EMAIL` (case-insensitive) is marked `is_admin`.
 2. Bind `ADMIN_EMAIL` as a secret if you want a different admin address than the default.
-3. Password accounts must confirm email before they can sign in; Google accounts are treated as verified.
+3. With Resend configured, password accounts must confirm email before they can sign in. Without Resend, new signups are auto-verified. Google accounts are always treated as verified.
 
 ## Secrets (Firebase / hosting)
 

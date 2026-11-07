@@ -165,8 +165,9 @@ export function AccountForms({
       <div>
         <h1 className="font-display text-4xl">Join the club</h1>
         <p className="mt-2 text-[color:var(--muted)]">
-          Email + password (confirm your email), or Google. RSVPs and forum
-          posts require an account.
+          {googleReady
+            ? "Email + password, or Google. RSVPs and forum posts require an account."
+            : "Email + password. RSVPs and forum posts require an account."}
         </p>
       </div>
       <div className="flex gap-3 text-sm">
@@ -248,14 +249,14 @@ export function AccountForms({
           {mode === "login" ? "Sign in with Neon Auth" : "Register with Neon Auth"}
         </button>
       ) : null}
-      <a
-        href={googleReady ? "/api/auth/google" : "/api/auth/google?mode=demo"}
-        className="btn-ghost flex w-full items-center justify-center"
-      >
-        {googleReady
-          ? "Continue with Google"
-          : "Continue with Google (local demo)"}
-      </a>
+      {googleReady ? (
+        <a
+          href="/api/auth/google"
+          className="btn-ghost flex w-full items-center justify-center"
+        >
+          Continue with Google
+        </a>
+      ) : null}
     </div>
   );
 }
