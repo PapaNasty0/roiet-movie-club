@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { EditableText } from "@/components/EditableText";
 import { UserAvatar } from "@/components/UserAvatar";
 import type { User } from "@/lib/types";
 import { neonAuthClient } from "@/lib/neon-auth-client";
@@ -11,11 +12,17 @@ export function AccountForms({
   googleReady,
   neonAuthReady = false,
   banner,
+  joinTitle,
+  joinIntro,
+  joinIntroPassword,
 }: {
   user: User | null;
   googleReady: boolean;
   neonAuthReady?: boolean;
   banner?: string | null;
+  joinTitle?: string;
+  joinIntro?: string;
+  joinIntroPassword?: string;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -436,6 +443,44 @@ export function AccountForms({
           </div>
         ) : null}
 
+        {user.is_admin ? (
+          <section className="space-y-4 border-t border-[color:var(--line)] pt-8">
+            <h2 className="font-display text-2xl">Public join page copy</h2>
+            <p className="text-sm text-[color:var(--muted)]">
+              Visitors see this when signed out. Use the pencils to edit.
+            </p>
+            <EditableText
+              contentKey="account.join_title"
+              value={joinTitle || "Join the club"}
+              isAdmin
+              as="h3"
+              className="font-display text-3xl"
+            />
+            <EditableText
+              contentKey="account.join_intro"
+              value={
+                joinIntro ||
+                "Email + password, or Google. Same email keeps one account. RSVPs and forum posts require an account."
+              }
+              isAdmin
+              as="p"
+              className="text-[color:var(--muted)]"
+              multiline
+            />
+            <EditableText
+              contentKey="account.join_intro_password"
+              value={
+                joinIntroPassword ||
+                "Email + password. RSVPs and forum posts require an account."
+              }
+              isAdmin
+              as="p"
+              className="text-[color:var(--muted)]"
+              multiline
+            />
+          </section>
+        ) : null}
+
         <div className="flex flex-wrap gap-3">
           {user.is_admin ? (
             <a href="/admin" className="btn-primary">
@@ -453,11 +498,13 @@ export function AccountForms({
   return (
     <div className="mx-auto max-w-md space-y-6">
       <div>
-        <h1 className="font-display text-4xl">Join the club</h1>
+        <h1 className="font-display text-4xl">{joinTitle || "Join the club"}</h1>
         <p className="mt-2 text-[color:var(--muted)]">
           {googleReady
-            ? "Email + password, or Google. Same email keeps one account. RSVPs and forum posts require an account."
-            : "Email + password. RSVPs and forum posts require an account."}
+            ? joinIntro ||
+              "Email + password, or Google. Same email keeps one account. RSVPs and forum posts require an account."
+            : joinIntroPassword ||
+              "Email + password. RSVPs and forum posts require an account."}
         </p>
       </div>
       {info ? (

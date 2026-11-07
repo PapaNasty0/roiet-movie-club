@@ -1,3 +1,4 @@
+import { EditableText } from "@/components/EditableText";
 import { SiteShell } from "@/components/SiteShell";
 import { requireUser } from "@/lib/auth";
 import { getContentMap } from "@/lib/content";
@@ -12,14 +13,31 @@ export default async function GalleryPage() {
     listGallery(),
     requireUser(),
   ]);
+  const isAdmin = Boolean(user?.is_admin);
 
   return (
-    <SiteShell brand={content["home.brand"]} skin={skin} user={user}>
+    <SiteShell
+      brand={content["home.brand"]}
+      footerTagline={content["footer.tagline"]}
+      skin={skin}
+      user={user}
+    >
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <h1 className="font-display text-4xl sm:text-5xl">Outing gallery</h1>
-        <p className="mt-3 max-w-2xl text-[color:var(--muted)]">
-          {content["gallery.intro"]}
-        </p>
+        <EditableText
+          contentKey="gallery.title"
+          value={content["gallery.title"] || "Outing gallery"}
+          isAdmin={isAdmin}
+          as="h1"
+          className="font-display text-4xl sm:text-5xl"
+        />
+        <EditableText
+          contentKey="gallery.intro"
+          value={content["gallery.intro"] || ""}
+          isAdmin={isAdmin}
+          as="p"
+          className="mt-3 max-w-2xl text-[color:var(--muted)]"
+          multiline
+        />
         <div className="mt-10 columns-1 gap-5 sm:columns-2 lg:columns-3">
           {photos.map((p, i) => (
             <figure

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EditableText } from "@/components/EditableText";
 import { SiteShell } from "@/components/SiteShell";
 import { requireUser } from "@/lib/auth";
 import { getContentMap } from "@/lib/content";
@@ -16,9 +17,10 @@ export default async function HomePage() {
   ]);
   const next = movies[0];
   const brand = content["home.brand"] || "RoiEt English Movie Club";
+  const isAdmin = Boolean(user?.is_admin);
 
   return (
-    <SiteShell brand={brand} skin={skin} user={user}>
+    <SiteShell brand={brand} footerTagline={content["footer.tagline"]} skin={skin} user={user}>
       <section className="hero-plane">
         <div
           className="hero-media"
@@ -34,42 +36,86 @@ export default async function HomePage() {
           style={{ background: skin.hero_overlay }}
         />
         <div className="hero-copy">
-          <p className="font-display text-4xl leading-none text-[color:var(--accent-soft)] sm:text-6xl md:text-7xl">
-            {brand}
-          </p>
-          <h1 className="mt-5 max-w-2xl text-xl text-[color:var(--ink)] sm:text-2xl">
-            {content["home.tagline"]}
-          </h1>
+          <EditableText
+            contentKey="home.brand"
+            value={brand}
+            isAdmin={isAdmin}
+            as="p"
+            className="font-display text-4xl leading-none text-[color:var(--accent-soft)] sm:text-6xl md:text-7xl"
+          />
+          <EditableText
+            contentKey="home.tagline"
+            value={content["home.tagline"] || ""}
+            isAdmin={isAdmin}
+            as="h1"
+            className="mt-5 max-w-2xl text-xl text-[color:var(--ink)] sm:text-2xl"
+            multiline
+          />
           <p className="mt-3 max-w-xl text-[color:var(--muted)]">
             {next
               ? `Next up: ${next.title} · ${formatShowtime(next.showtime_start)}`
               : "Upcoming English titles are posted by the club admin."}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/movies" className="btn-primary">
-              {content["home.cta_primary"] || "See upcoming movies"}
-            </Link>
-            <Link href="/account" className="btn-ghost">
-              {content["home.cta_secondary"] || "Join the club"}
-            </Link>
+            <EditableText
+              contentKey="home.cta_primary"
+              value={content["home.cta_primary"] || "See upcoming movies"}
+              isAdmin={isAdmin}
+              as="span"
+              inline
+            >
+              {(text) => (
+                <Link href="/movies" className="btn-primary">
+                  {text}
+                </Link>
+              )}
+            </EditableText>
+            <EditableText
+              contentKey="home.cta_secondary"
+              value={content["home.cta_secondary"] || "Join the club"}
+              isAdmin={isAdmin}
+              as="span"
+              inline
+            >
+              {(text) => (
+                <Link href="/account" className="btn-ghost">
+                  {text}
+                </Link>
+              )}
+            </EditableText>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="fade-up max-w-2xl">
-          <h2 className="font-display text-3xl">Why we meet</h2>
-          <p className="mt-4 text-lg leading-relaxed text-[color:var(--muted)]">
-            {content["home.about"]}
-          </p>
+          <EditableText
+            contentKey="home.about_heading"
+            value={content["home.about_heading"] || "Why we meet"}
+            isAdmin={isAdmin}
+            as="h2"
+            className="font-display text-3xl"
+          />
+          <EditableText
+            contentKey="home.about"
+            value={content["home.about"] || ""}
+            isAdmin={isAdmin}
+            as="p"
+            className="mt-4 text-lg leading-relaxed text-[color:var(--muted)]"
+            multiline
+          />
         </div>
 
         {next ? (
           <div className="fade-up-delay mt-14 grid gap-8 border-t border-[color:var(--line)] pt-12 lg:grid-cols-[1.2fr_0.8fr]">
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--muted)]">
-                Coming soon
-              </p>
+              <EditableText
+                contentKey="home.next_label"
+                value={content["home.next_label"] || "Coming soon"}
+                isAdmin={isAdmin}
+                as="p"
+                className="text-sm uppercase tracking-[0.2em] text-[color:var(--muted)]"
+              />
               <h3 className="font-display mt-3 text-4xl">{next.title}</h3>
               <p className="mt-4 max-w-xl text-[color:var(--muted)]">{next.synopsis}</p>
               <dl className="mt-6 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
@@ -90,9 +136,21 @@ export default async function HomePage() {
                   <dd>{next.genre || "—"}</dd>
                 </div>
               </dl>
-              <Link href={`/movies/${next.id}`} className="btn-primary mt-8 inline-flex">
-                Movie details & RSVP
-              </Link>
+              <div className="mt-8">
+                <EditableText
+                  contentKey="home.next_cta"
+                  value={content["home.next_cta"] || "Movie details & RSVP"}
+                  isAdmin={isAdmin}
+                  as="span"
+                  inline
+                >
+                  {(text) => (
+                    <Link href={`/movies/${next.id}`} className="btn-primary inline-flex">
+                      {text}
+                    </Link>
+                  )}
+                </EditableText>
+              </div>
             </div>
             {next.youtube_trailer_id ? (
               <div className="aspect-video overflow-hidden rounded-sm bg-black/40">
