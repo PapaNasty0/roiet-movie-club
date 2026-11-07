@@ -55,15 +55,17 @@ Google OAuth redirect URI: `https://movieclub101.com/api/auth/google/callback`
 
 ## Firebase App Hosting (production)
 
-SSR + API routes → **App Hosting** (not static export). Firebase project **`movieclub101`**, custom domain **`movieclub101.com`**.
+SSR + API routes → **App Hosting** (not static export). Firebase project **`movieclub101-da5f1`** (console display name **movieclub101**), custom domain **`movieclub101.com`**.
 
 Repo files: `.firebaserc`, `firebase.json` (backend id `movieclub`), `apphosting.yaml`.
+
+**Requires Blaze:** https://console.firebase.google.com/project/movieclub101-da5f1/usage/details
 
 Full DNS / console / secrets handoff: Project store `docs/firebase-hosting.md`.
 
 ```bash
 npx firebase-tools@latest login --no-localhost
-npx firebase-tools@latest use movieclub101
+npx firebase-tools@latest use movieclub101-da5f1
 npx firebase-tools@latest apphosting:secrets:set SESSION_SECRET
 npx firebase-tools@latest apphosting:secrets:set DATABASE_URL
 npx firebase-tools@latest apphosting:secrets:set ADMIN_EMAIL
