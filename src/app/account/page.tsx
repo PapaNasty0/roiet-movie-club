@@ -16,6 +16,7 @@ export default async function AccountPage() {
     process.env.GOOGLE_CLIENT_ID?.trim() &&
       process.env.GOOGLE_CLIENT_SECRET?.trim(),
   );
+  const allowGoogleDemo = process.env.NODE_ENV !== "production";
   const neonAuthReady = Boolean(
     process.env.NEON_AUTH_BASE_URL?.trim() &&
       (process.env.NEON_AUTH_COOKIE_SECRET?.trim().length ?? 0) >= 32,
@@ -27,6 +28,7 @@ export default async function AccountPage() {
         <AccountForms
           user={user}
           googleReady={googleReady}
+          allowGoogleDemo={allowGoogleDemo}
           neonAuthReady={neonAuthReady}
         />
       </div>

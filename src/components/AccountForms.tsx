@@ -8,10 +8,12 @@ import { neonAuthClient } from "@/lib/neon-auth-client";
 export function AccountForms({
   user,
   googleReady,
+  allowGoogleDemo = false,
   neonAuthReady = false,
 }: {
   user: User | null;
   googleReady: boolean;
+  allowGoogleDemo?: boolean;
   neonAuthReady?: boolean;
 }) {
   const router = useRouter();
@@ -52,7 +54,12 @@ export function AccountForms({
           : data.message ||
               "Check your email for a confirmation link before signing in.",
       );
-      setMode("login");
+      if (data.adminBootstrap) {
+        setMode("login");
+        setEmail(email);
+      } else {
+        setMode("login");
+      }
       return;
     }
     router.refresh();
@@ -248,14 +255,31 @@ export function AccountForms({
           {mode === "login" ? "Sign in with Neon Auth" : "Register with Neon Auth"}
         </button>
       ) : null}
-      <a
-        href={googleReady ? "/api/auth/google" : "/api/auth/google?mode=demo"}
-        className="btn-ghost flex w-full items-center justify-center"
-      >
-        {googleReady
-          ? "Continue with Google"
-          : "Continue with Google (local demo)"}
-      </a>
+      {googleReady ? (
+        <a
+          href="/api/auth/google"
+          className="btn-ghost flex w-full items-center justify-center"
+        >
+          Continue with Google
+        </a>
+      ) : allowGoogleDemo ? (
+        <a
+          href="/api/auth/google?mode=demo"
+          className="btn-ghost flex w-full items-center justify-center"
+        >
+          Continue with Google (local demo)
+        </a>
+      ) : (
+        <p className="text-sm text-[color:var(--muted)]">
+          Google sign-in is off until{" "}
+          <code className="text-[color:var(--accent-soft)]">GOOGLE_CLIENT_ID</code>{" "}
+          and{" "}
+          <code className="text-[color:var(--accent-soft)]">
+            GOOGLE_CLIENT_SECRET
+          </code>{" "}
+          are set in App Hosting.
+        </p>
+      )}
     </div>
   );
 }

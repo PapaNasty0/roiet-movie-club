@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
+  adminPasswordBootstrapAllowed,
   createUser,
   findUserByEmail,
   resetUnverifiedPasswordUser,
   startEmailVerification,
 } from "@/lib/auth";
+import { resendConfigured } from "@/lib/email";
 
 const schema = z.object({
   email: z.string().email(),
@@ -53,12 +55,27 @@ export async function POST(request: Request) {
     origin: appOrigin(request),
   });
 
+  let message =
+    "Check your email for a confirmation link before signing in.";
+  if (mail.stubbed && !mail.verifyUrl) {
+    message = adminPasswordBootstrapAllowed(user.email)
+      ? "Email delivery is not configured. Sign in with this password to finish admin setup."
+      : "Email confirmation is required, but delivery is not configured yet. Ask the site admin to enable email (RESEND) or Google sign-in.";
+  } else if (!resendConfigured() && mail.verifyUrl) {
+    message =
+      "Confirm your email to finish. Open the local verification link shown below.";
+  }
+
   return NextResponse.json(
     {
       pendingVerification: true,
-      message:
-        "Check your email for a confirmation link before signing in.",
+      message,
       ...(mail.verifyUrl ? { verifyUrl: mail.verifyUrl } : {}),
+      ...(mail.stubbed &&
+      !mail.verifyUrl &&
+      adminPasswordBootstrapAllowed(user.email)
+        ? { adminBootstrap: true }
+        : {}),
     },
     { headers: { "cache-control": "private, no-store" } },
   );
