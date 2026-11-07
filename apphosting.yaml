@@ -10,6 +10,10 @@
 #
 # Secrets (create before first rollout):
 #   SESSION_SECRET, DATABASE_URL, DATABASE_URL_UNPOOLED, ADMIN_EMAIL
+# Optional (Brian creates in provider consoles — do not invent values):
+#   RESEND_API_KEY, EMAIL_FROM — email confirmation + movie alerts
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET — real Google sign-in
+# Until RESEND is set, only ADMIN_EMAIL can finish password signup by signing in.
 
 runConfig:
   runtime: nodejs22
