@@ -1,0 +1,161 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { User } from "@/lib/types";
+
+export function AccountForms({
+  user,
+  googleReady,
+}: {
+  user: User | null;
+  googleReady: boolean;
+}) {
+  const router = useRouter();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [notify, setNotify] = useState(user?.notify_new_movies ?? false);
+  const [busy, setBusy] = useState(false);
+
+  async function authSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    const res = await fetch(`/api/auth/${mode === "login" ? "login" : "register"}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        mode === "login" ? { email, password } : { email, password, name },
+      ),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setError(data.error || "Something went wrong");
+      return;
+    }
+    router.refresh();
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.refresh();
+  }
+
+  async function saveNotify(next: boolean) {
+    setNotify(next);
+    await fetch("/api/auth/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notify_new_movies: next }),
+    });
+  }
+
+  if (user) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <p className="text-sm uppercase tracking-[0.18em] text-[color:var(--muted)]">Signed in</p>
+          <h1 className="font-display mt-2 text-4xl">{user.name || user.email}</h1>
+          <p className="mt-2 text-[color:var(--muted)]">{user.email}</p>
+          {user.is_admin ? (
+            <p className="mt-3 text-[color:var(--accent)]">Admin access enabled</p>
+          ) : null}
+        </div>
+        <label className="flex items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={notify}
+            onChange={(e) => saveNotify(e.target.checked)}
+            className="mt-1"
+          />
+          <span>
+            Email me when a new English movie is posted
+            <span className="mt-1 block text-[color:var(--muted)]">
+              Preference is saved now. Delivery needs an email provider secret (see README).
+            </span>
+          </span>
+        </label>
+        <div className="flex flex-wrap gap-3">
+          {user.is_admin ? (
+            <a href="/admin" className="btn-primary">
+              Open admin
+            </a>
+          ) : null}
+          <button type="button" className="btn-ghost" onClick={logout}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-md space-y-6">
+      <div>
+        <h1 className="font-display text-4xl">Join the club</h1>
+        <p className="mt-2 text-[color:var(--muted)]">
+          Email + password, or Google. RSVPs and forum posts require an account.
+        </p>
+      </div>
+      <div className="flex gap-3 text-sm">
+        <button
+          type="button"
+          className={mode === "login" ? "text-[color:var(--accent)]" : "text-[color:var(--muted)]"}
+          onClick={() => setMode("login")}
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          className={mode === "register" ? "text-[color:var(--accent)]" : "text-[color:var(--muted)]"}
+          onClick={() => setMode("register")}
+        >
+          Register
+        </button>
+      </div>
+      <form onSubmit={authSubmit} className="space-y-3">
+        {mode === "register" ? (
+          <label className="block space-y-1 text-sm">
+            <span className="text-[color:var(--muted)]">Name</span>
+            <input className="field" value={name} onChange={(e) => setName(e.target.value)} required />
+          </label>
+        ) : null}
+        <label className="block space-y-1 text-sm">
+          <span className="text-[color:var(--muted)]">Email</span>
+          <input
+            className="field"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </label>
+        <label className="block space-y-1 text-sm">
+          <span className="text-[color:var(--muted)]">Password</span>
+          <input
+            className="field"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={mode === "register" ? 8 : 1}
+            required
+          />
+        </label>
+        {error ? <p className="text-sm text-[color:var(--danger)]">{error}</p> : null}
+        <button className="btn-primary w-full" disabled={busy} type="submit">
+          {mode === "login" ? "Sign in" : "Create account"}
+        </button>
+      </form>
+      <a
+        href={googleReady ? "/api/auth/google" : "/api/auth/google?mode=demo"}
+        className="btn-ghost flex w-full items-center justify-center"
+      >
+        {googleReady ? "Continue with Google" : "Continue with Google (local demo)"}
+      </a>
+    </div>
+  );
+}

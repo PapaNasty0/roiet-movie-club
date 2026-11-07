@@ -1,0 +1,48 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireAdmin } from "@/lib/auth";
+import { sql } from "@/lib/db";
+import { getAllContent } from "@/lib/content";
+
+export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin) {
+    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  }
+  return NextResponse.json(
+    { content: await getAllContent() },
+    { headers: { "cache-control": "private, no-store" } },
+  );
+}
+
+const schema = z.object({
+  items: z.array(
+    z.object({
+      key: z.string().min(1),
+      value: z.string(),
+    }),
+  ),
+});
+
+export async function PUT(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin) {
+    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  }
+  const parsed = schema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid content payload" }, { status: 400 });
+  }
+  for (const item of parsed.data.items) {
+    await sql(
+      `insert into site_content (key, label, value, updated_at)
+       values ($1, $1, $2, now())
+       on conflict (key) do update set value = excluded.value, updated_at = now()`,
+      [item.key, item.value],
+    );
+  }
+  return NextResponse.json(
+    { content: await getAllContent() },
+    { headers: { "cache-control": "private, no-store" } },
+  );
+}
