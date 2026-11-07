@@ -7,10 +7,16 @@
     "build": "next build && node scripts/migrate.mjs",
     "start": "next start --hostname 127.0.0.1 --port 3000",
     "lint": "next lint",
-    "migrate": "node scripts/migrate.mjs"
+    "migrate": "node scripts/migrate.mjs",
+    "prove:neon": "node scripts/prove-neon.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1164.0",
+    "@aws-sdk/s3-request-presigner": "^3.1164.0",
     "@electric-sql/pglite": "^0.5.15",
+    "@neon/auth": "^0.8.2",
+    "@neon/config": "^1.13.0",
+    "@neon/env": "^2.1.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.15",
     "next": "^16.4.5",

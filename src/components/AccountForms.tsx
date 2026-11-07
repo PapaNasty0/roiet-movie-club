@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@/lib/types";
+import { neonAuthClient } from "@/lib/neon-auth-client";
 
 export function AccountForms({
   user,
   googleReady,
+  neonAuthReady = false,
 }: {
   user: User | null;
   googleReady: boolean;
+  neonAuthReady?: boolean;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -38,6 +41,48 @@ export function AccountForms({
       return;
     }
     router.refresh();
+  }
+
+  async function neonAuthSubmit() {
+    if (!neonAuthReady) return;
+    setBusy(true);
+    setError("");
+    try {
+      if (mode === "register") {
+        const { error: signUpError } = await neonAuthClient.signUp.email({
+          email,
+          password,
+          name: name || email.split("@")[0],
+        });
+        if (signUpError) {
+          setError(signUpError.message || "Neon Auth sign-up failed");
+          setBusy(false);
+          return;
+        }
+      } else {
+        const { error: signInError } = await neonAuthClient.signIn.email({
+          email,
+          password,
+        });
+        if (signInError) {
+          setError(signInError.message || "Neon Auth sign-in failed");
+          setBusy(false);
+          return;
+        }
+      }
+      const bridge = await fetch("/api/auth/neon/bridge", { method: "POST" });
+      const bridgeData = await bridge.json().catch(() => ({}));
+      if (!bridge.ok) {
+        setError(bridgeData.error || "Could not link Neon Auth session");
+        setBusy(false);
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Neon Auth failed");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function logout() {
@@ -150,6 +195,16 @@ export function AccountForms({
           {mode === "login" ? "Sign in" : "Create account"}
         </button>
       </form>
+      {neonAuthReady ? (
+        <button
+          type="button"
+          className="btn-ghost w-full"
+          disabled={busy}
+          onClick={() => void neonAuthSubmit()}
+        >
+          {mode === "login" ? "Sign in with Neon Auth" : "Register with Neon Auth"}
+        </button>
+      ) : null}
       <a
         href={googleReady ? "/api/auth/google" : "/api/auth/google?mode=demo"}
         className="btn-ghost flex w-full items-center justify-center"

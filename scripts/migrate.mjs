@@ -1,5 +1,23 @@
+import { existsSync, readFileSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import pg from "pg";
+
+// Load .env.local for local `npm run build` (App Hosting injects env itself).
+if (existsSync(".env.local")) {
+  for (const line of readFileSync(".env.local", "utf8").split("\n")) {
+    if (!line || line.startsWith("#") || !line.includes("=")) continue;
+    const i = line.indexOf("=");
+    const k = line.slice(0, i);
+    let v = line.slice(i + 1).trim();
+    if (
+      (v.startsWith('"') && v.endsWith('"')) ||
+      (v.startsWith("'") && v.endsWith("'"))
+    ) {
+      v = v.slice(1, -1);
+    }
+    if (process.env[k] === undefined) process.env[k] = v;
+  }
+}
 
 const url = process.env.DATABASE_URL?.trim() ?? "";
 const files = (await readdir("migrations").catch(() => []))
@@ -9,8 +27,12 @@ if (url === "" || files.length === 0) {
   console.log("migrate: nothing to do");
   process.exit(0);
 }
+const connectionString = process.env.DATABASE_URL_UNPOOLED?.trim() || url;
 const client = new pg.Client({
-  connectionString: process.env.DATABASE_URL_UNPOOLED?.trim() || url,
+  connectionString,
+  ssl: connectionString.includes("sslmode=require")
+    ? { rejectUnauthorized: false }
+    : undefined,
 });
 await client.connect();
 try {

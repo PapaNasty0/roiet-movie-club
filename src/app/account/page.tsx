@@ -16,11 +16,19 @@ export default async function AccountPage() {
     process.env.GOOGLE_CLIENT_ID?.trim() &&
       process.env.GOOGLE_CLIENT_SECRET?.trim(),
   );
+  const neonAuthReady = Boolean(
+    process.env.NEON_AUTH_BASE_URL?.trim() &&
+      (process.env.NEON_AUTH_COOKIE_SECRET?.trim().length ?? 0) >= 32,
+  );
 
   return (
     <SiteShell brand={content["home.brand"]} skin={skin} user={user}>
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <AccountForms user={user} googleReady={googleReady} />
+        <AccountForms
+          user={user}
+          googleReady={googleReady}
+          neonAuthReady={neonAuthReady}
+        />
       </div>
     </SiteShell>
   );

@@ -53,7 +53,7 @@ Change the admin password after first login in production.
 | `EMAIL_FROM` | Optional — From address for Resend |
 | `APP_ORIGIN` | Optional — canonical origin for OAuth redirects |
 
-`DATABASE_URL` is provided by Cursor when the app declares Postgres (`cursor-app.json` / `migrations/`).
+`DATABASE_URL` / `DATABASE_URL_UNPOOLED` come from Neon (`neon env pull` / App Hosting secrets).
 
 Google OAuth redirect URI: `https://<your-app-host>/api/auth/google/callback`
 
@@ -65,4 +65,13 @@ Google OAuth redirect URI: `https://<your-app-host>/api/auth/google/callback`
 
 ## Stack
 
-Next.js (App Router), Postgres via `pg` / PGlite fallback, cookie sessions (`jose`), Tailwind CSS.
+Next.js (App Router), Neon Lakebase Postgres via `pg` (PGlite fallback without `DATABASE_URL`), Neon Auth (optional alongside email/Google), Neon Object Storage for gallery uploads, cookie sessions (`jose`), Tailwind CSS.
+
+## Neon
+
+Linked project uses `neon.ts` + `neon deploy`. Local secrets live in `.env.local` (gitignored). Useful commands:
+
+```bash
+npx neon env pull
+npm run prove:neon
+```
